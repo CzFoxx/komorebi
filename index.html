@@ -1326,11 +1326,13 @@ function scene(t){
 
 /* ─────────────── PŘEJEZD ─────────────── */
 let gateClosed=0,gateTarget=0,gateAcc=0,gateBlink=0;
+let gateItems=[];
 function gates(n){
+  gateItems=[];
   const last=TRACKY[n-1]+.95;
   const a=gateClosed*Math.PI/2; // 0 = zvednuto, 1 = dolů
   const drawGate=(x,y,dir)=>{
-    q(x,y,()=>{
+    const item={x,y,k:STRIP(y)*10000+x+y+2,fn:()=>{
       box(x-.05,y-.05,0,.1,.1,1.25,"#e9e6dc");
       for(let i=0;i<3;i++)box(x-.052,y-.052,.15+i*.34,.104,.104,.14,"#23262c");
       const on=gateTarget&&(gateBlink%1<.5);
@@ -1338,7 +1340,8 @@ function gates(n){
       const len=1.75,zb=.95,ex=x+dir*Math.sin(a)*len,ez=zb+Math.cos(a)*len;
       c.strokeStyle="#f0c93a";c.lineWidth=2.6;c.setLineDash([6,5]);c.beginPath();c.moveTo(px(x,y),py(x,y,zb));c.lineTo(px(ex,y),py(ex,y,ez));c.stroke();
       c.strokeStyle="#23262c";c.lineDashOffset=6;c.beginPath();c.moveTo(px(x,y),py(x,y,zb));c.lineTo(px(ex,y),py(ex,y,ez));c.stroke();c.setLineDash([]);c.lineDashOffset=0;
-    },2);
+    }};
+    Q.push(item);gateItems.push(item);
   };
   drawGate(35,12.1,-1);drawGate(33,last+.05,1);
 }
@@ -1761,12 +1764,16 @@ function drawVehicle(a,t){
 }
 function drawAutos(t){
   const vis=autos.filter(a=>a.y>=.9&&a.y<=MAPY-.9);
-  const key=a=>STRIP(a.y)*10000+a.lane+a.y+1;
-  // auta v bližším pruhu (větší x) jsou při míjení vždy vpředu, i přes hranici pásů vrstvení
+  const key=a=>STRIP(a.y)*10000+a.lane+a.y+1,near=[];
+  // vzdálenější pruh se kreslí první; závora s menším x je za autem, s větším před ním
+  vis.sort((a,b)=>a.lane-b.lane);
   for(const a of vis){
     let k=key(a);
-    if(a.lane>34)for(const b of vis)if(b.lane<34&&Math.abs(a.y-b.y)<2.2)k=Math.max(k,key(b)+.01);
-    Q.push({k,fn:()=>drawVehicle(a,t)});
+    for(const b of near)if(b.a.lane<a.lane&&Math.abs(a.y-b.a.y)<2.2)k=Math.max(k,b.k+.01);
+    for(const g of gateItems)if(g.x<34&&Math.abs(a.y-g.y)<2.6)k=Math.max(k,g.k+.01);
+    const item={k,fn:()=>drawVehicle(a,t)};
+    near.push({a,k});Q.push(item);
+    for(const g of gateItems)if(g.x>34&&Math.abs(a.y-g.y)<2.6)g.k=Math.max(g.k,k+.01);
   }
 }
 
