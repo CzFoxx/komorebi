@@ -1,0 +1,2381 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Stanice Komorebi</title>
+<meta name="description" content="Relaxační izometrická hra: rozvíjej malou japonskou železniční stanici v rušný uzel.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f8a78'/%3E%3Crect x='7' y='6' width='18' height='17' rx='3' fill='%23fbfcfa'/%3E%3Crect x='10' y='9' width='12' height='6' fill='%231c2a3f'/%3E%3Ccircle cx='11' cy='19' r='1.6' fill='%23cf4a33'/%3E%3Ccircle cx='21' cy='19' r='1.6' fill='%23cf4a33'/%3E%3Cpath d='M10 23l-3 4M22 23l3 4' stroke='%23fbfcfa' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: celoobrazovková izometrická dioráma; ovládání vypadá jako japonské nádražní cedule (ekimeihyó) a papírové jízdenky. */
+:root{
+  --ink:#1c2a3f; --ink-soft:#5b6a7c; --sign:#fbfcfa; --line:#1f8a78; --line-deep:#146556;
+  --ticket:#eef3ef; --ticket-edge:#cfdad3; --gold:#c9902a; --vermilion:#cf4a33; --sky:#cfe3e6;
+  --disp:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hidden;position:relative;overscroll-behavior:none}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#scene:active{cursor:grabbing}
+button{font-family:inherit;color:inherit}
+button:focus-visible{outline:2px solid var(--vermilion);outline-offset:2px}
+
+/* Cedule se jménem stanice */
+#sign{position:absolute;top:max(12px,env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));width:min(340px,calc(100% - 32px));background:var(--sign);border-radius:4px;box-shadow:0 1px 0 #fff inset,0 6px 22px rgba(28,42,63,.2);overflow:hidden}
+#sign .top{padding:9px 14px 5px;display:flex;align-items:baseline;gap:10px}
+#sign .kanji{font-family:var(--disp);font-weight:800;font-size:1.75rem;letter-spacing:.14em;line-height:1.1;white-space:nowrap}
+#sign .roma{font-size:.78rem;color:var(--ink-soft);letter-spacing:.04em}
+#sign .band{height:15px;background:var(--line);position:relative}
+#sign .band::after{content:"";position:absolute;left:50%;top:-2px;width:19px;height:19px;margin-left:-9.5px;border-radius:50%;background:var(--sign);border:4px solid var(--line-deep);box-sizing:border-box}
+#sign .near{display:flex;justify-content:space-between;font-size:.7rem;color:var(--ink-soft);padding:3px 14px 0}
+#sign .money{padding:5px 14px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#money{font-weight:700;font-size:1.55rem;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+#rate{font-size:.8rem;color:var(--line-deep);font-variant-numeric:tabular-nums;font-weight:500}
+#rank{font-size:.72rem;color:var(--ink-soft);padding:0 14px 9px;margin-top:-6px}
+
+/* Stavový proužek */
+#status{position:absolute;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 32px)}
+.chip{background:rgba(28,42,63,.84);color:#f3f6f4;border:0;border-radius:3px;padding:6px 10px;font-size:.76rem;font-variant-numeric:tabular-nums;line-height:1.2}
+.eventChip{background:var(--vermilion);font-weight:700}
+button.chip{cursor:pointer}
+button.chip:hover{background:var(--ink)}
+
+/* Panel investic */
+#panel{position:absolute;top:max(12px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:330px;background:var(--sign);border-radius:4px;box-shadow:0 6px 22px rgba(28,42,63,.22);display:flex;flex-direction:column;min-height:0;transition:transform .28s ease}
+#panel.closed{transform:translateX(calc(100% + 24px))}
+#panelHead{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 8px 14px;gap:8px}
+#panelHead h2{font-family:var(--disp);font-weight:800;font-size:1.15rem;margin:0}
+#closePanel{background:none;border:0;cursor:pointer;font-size:.8rem;color:var(--ink-soft);padding:4px 6px}
+#tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:3px solid var(--line)}
+#tabs button{background:none;border:0;padding:8px 2px;font-size:.86rem;font-weight:500;cursor:pointer;color:var(--ink-soft);position:relative}
+#tabs button[aria-selected="true"]{background:var(--line);color:#fff;font-weight:700}
+#tabs .dot{display:inline-block;min-width:1.25em;margin-left:4px;font-size:.68rem;line-height:1.25em;background:var(--gold);color:#fff;border-radius:9px;font-variant-numeric:tabular-nums}
+#tabs .dot:empty{display:none}
+#hint{font-size:.8rem;line-height:1.4;padding:8px 14px;color:var(--ink);background:#e3f0ec}
+#list{flex:1;min-height:0;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.tk{background:var(--ticket);border:1px solid var(--ticket-edge);border-radius:3px;padding:9px 10px;display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center}
+.tk.maxed{opacity:.72}
+.tk h3{margin:0;font-size:.92rem;font-weight:700;line-height:1.25;min-width:0}
+.tk h3 span{font-family:var(--disp);font-weight:600;color:var(--ink-soft);font-size:.74rem;margin-left:5px}
+.tk p{margin:0;font-size:.76rem;line-height:1.35;color:var(--ink-soft);grid-column:1;min-width:0}
+.tk .pips{grid-column:1;display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
+.tk .pips i{width:9px;height:5px;background:var(--ticket-edge);display:block}
+.tk .pips i.on{background:var(--line)}
+.tk button{grid-column:2;grid-row:1 / span 3;min-width:86px;border:0;border-radius:3px;background:var(--line);color:#fff;font-weight:700;font-size:.82rem;padding:9px 8px;cursor:pointer;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tk button:hover:not(:disabled){background:var(--line-deep)}
+.tk button:disabled{background:#d7e0db;color:#65727a;cursor:default}
+#panelFoot{padding:8px 14px;font-size:.74rem;color:var(--ink-soft);display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--ticket-edge);flex-wrap:wrap}
+#panelFoot button{background:none;border:0;padding:2px 0;font-size:.74rem;color:var(--ink-soft);text-decoration:underline;cursor:pointer}
+#panelFoot button.danger{color:#fff;background:var(--vermilion);font-weight:700;text-decoration:none;padding:5px 9px;border-radius:3px}
+#panelFoot button.resetMain{color:var(--vermilion);border:1px solid var(--vermilion);text-decoration:none;font-weight:700;padding:4px 9px;border-radius:3px}
+#panelFoot .resetAsk{color:var(--ink);font-weight:500}
+#resetWrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#openPanel{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--line);color:#fff;border:0;border-radius:3px;padding:11px 16px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 14px rgba(28,42,63,.3)}
+#openPanel b{color:#ffe2a0;margin-left:4px}
+
+#toast{position:absolute;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 14px;border-radius:3px;font-size:.84rem;max-width:min(420px,calc(100% - 32px));line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.25);text-align:center;pointer-events:none;transition:opacity .4s;opacity:0;z-index:5}
+#toast.on{opacity:1}
+
+@media (max-width:760px){
+  #sign .kanji{font-size:1.25rem}
+  #sign .top{padding:6px 12px 3px}
+  #sign .near{display:none}
+  #sign .band{height:9px}
+  #sign .band::after{display:none}
+  #sign .money{padding:4px 12px 6px}
+  #money{font-size:1.25rem}
+  #rank{display:none}
+  #panel{left:0;right:0;width:auto;top:auto;bottom:0;height:47%;border-radius:8px 8px 0 0;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  #panel.closed{transform:translateY(calc(100% + 10px))}
+  #status{bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 170px)}
+  #panel:not(.closed) ~ #status{display:none}
+  #toast{top:auto;bottom:calc(52% + 8px)}
+}
+@media (prefers-reduced-motion:reduce){#panel,#toast{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Izometrický pohled na japonskou železniční stanici a její okolí"></canvas>
+
+<section id="sign" aria-label="Stanice a pokladna">
+  <div class="top"><span class="kanji">木漏れ日</span><span class="roma">Komorebi</span></div>
+  <div class="band"></div>
+  <div class="near"><span>← Sakaue</span><span>Minato →</span></div>
+  <div class="money"><span id="money">¥ 0</span><span id="rate"></span></div>
+  <div id="rank"></div>
+</section>
+
+<aside id="panel" aria-label="Investice">
+  <div id="panelHead"><h2>Investice</h2><button id="closePanel" type="button">Skrýt a jen se dívat</button></div>
+  <div id="tabs" role="tablist"></div>
+  <div id="hint"></div>
+  <div id="list"></div>
+  <div id="panelFoot"><span id="totals"></span><span id="resetWrap"><button id="resetBtn" class="resetMain" type="button">Reset hry</button></span></div>
+</aside>
+<div id="status">
+  <span class="chip" id="clock"></span>
+  <span class="chip" id="waitChip"></span>
+  <span class="chip eventChip" id="eventChip" hidden></span>
+  <button class="chip" id="soundBtn" type="button">Zapnout zvuk</button>
+  <button class="chip" id="zoomIn" type="button" aria-label="Přiblížit">+</button>
+  <button class="chip" id="zoomOut" type="button" aria-label="Oddálit">−</button>
+</div>
+<button id="openPanel" type="button" hidden>Investice<b id="openCount"></b></button>
+<div id="toast" role="status"></div>
+
+<script>
+(()=>{"use strict";
+/* ─────────────── EKONOMIKA ─────────────── */
+const UPG = [
+ // KOLEJE
+ {id:"cars",tab:0,jp:"編成",name:"Delší soupravy",desc:"Každý vlak má o vůz víc a odveze víc lidí.",max:5,cost:900,g:7.5,at:[17,13]},
+ {id:"sched",tab:0,jp:"ダイヤ",name:"Hustší jízdní řád",desc:"Vlaky jezdí o 12 % častěji.",max:7,cost:2600,g:3.1,at:[17,13]},
+ {id:"tracks",tab:0,jp:"線路",name:"Nová kolej",desc:"Další kolej, další vlaky. První přinese ostrovní nástupiště a lávku.",max:3,cost:42000,g:16,at:[17,16]},
+ {id:"elec",tab:0,jp:"電化",name:"Elektrifikace trati",desc:"Trolej a nové stříbrné vlaky: o 15 % rychlejší provoz, o 25 % větší kapacita.",max:1,cost:300000,g:1,at:[20,13]},
+ {id:"express",tab:0,jp:"特急",name:"Rychlík do Tokia",desc:"Na čtvrté koleji staví vysokorychlostní vlak ve stylu šinkansenu a jízdné roste o 60 %.",max:1,cost:9e7,g:1,at:[17,19],req:s=>s.tracks>=3&&s.elec>=1,reqText:"Vyžaduje čtvrtou kolej a elektrifikaci."},
+ // STANICE
+ {id:"decor",tab:1,jp:"花壇",name:"Lavičky a květiny",desc:"Hezčí čekání. Přijde o 8 % víc lidí.",max:3,cost:400,g:6,at:[22,8]},
+ {id:"machine",tab:1,jp:"券売機",name:"Automaty na jízdenky",desc:"Rychlejší odbavení, jízdné o 25 % vyšší.",max:3,cost:1500,g:9,at:[19.5,7.5]},
+ {id:"vending",tab:1,jp:"自販機",name:"Nápojové automaty",desc:"Každý cestující si koupí pití: +¥20 za osobu.",max:4,cost:3200,g:6,at:[12,11.5]},
+ {id:"canopy",tab:1,jp:"屋根",name:"Přístřešek na peronu",desc:"Sucho i za deště. Přijde o 12 % víc lidí.",max:3,cost:9000,g:7,at:[17,11.8]},
+ {id:"kiosk",tab:1,jp:"売店",name:"Kiosek s bentem",desc:"Obědové krabičky na cestu: +¥60 za osobu.",max:2,cost:30000,g:12,at:[22,11.7]},
+ {id:"building",tab:1,jp:"駅舎",name:"Přestavba budovy",desc:"Větší nádražní budova: o 20 % víc lidí a o 20 % vyšší jízdné.",max:3,cost:180000,g:8,at:[15,9]},
+ // OKOLÍ
+ {id:"houses",tab:2,jp:"住宅",name:"Nové domy",desc:"Noví sousedé jezdí vlakem. Každý dům přivede další cestující.",max:10,cost:700,g:2.3,at:[6,7]},
+ {id:"homes",tab:2,jp:"改築",name:"Vylepšení domů",desc:"Všechny obytné domy zkrásní a přibudou na nich detaily: zahrádka, druhé patro, balkon, solární panely. O 8 % víc lidí za stupeň.",max:4,cost:9000,g:6,at:[5,4]},
+ {id:"walk",tab:2,jp:"歩道",name:"Chodníky",desc:"Bezpečná cesta na nádraží: o 6 % víc lidí. První stupeň lemuje ulici, druhý silnici k přejezdu.",max:2,cost:2200,g:9,at:[30,5.9]},
+ {id:"trees",tab:2,jp:"桜",name:"Sakury podél trati",desc:"Výletníci za květy: o 5 % víc lidí za každou řadu.",max:6,cost:5000,g:3.4,at:[12,22.5]},
+ {id:"bike",tab:2,jp:"駐輪場",name:"Parkoviště kol",desc:"Lidé z dalekého okolí dojedou na kole.",max:1,cost:6000,g:1,at:[30,10]},
+ {id:"bus",tab:2,jp:"バス停",name:"Autobusová zastávka",desc:"Autobus pravidelně sváží lidi z údolí: o 30 % víc cestujících a jízdné z každého příjezdu.",max:1,cost:50000,g:1,at:[24,5.2]},
+ {id:"shops",tab:2,jp:"商店街",name:"Nákupní ulička",desc:"Nový obchod: víc lidí a +¥25 za osobu.",max:5,cost:12000,g:3.6,at:[26,3]},
+ {id:"cafe",tab:2,jp:"猫カフェ",name:"Kočičí kavárna",desc:"Speciální budova. Výletníci za kočkami: o 10 % víc lidí a +¥30 za osobu. Kočka štěstí chodí dvakrát častěji a nosí větší bonus.",max:1,cost:180000,g:1,at:[19.3,2.2]},
+ {id:"shopup",tab:2,jp:"改装",name:"Vylepšení uličky",desc:"Všechny obchody zkrásní a přibudou na nich detaily: stánky s praporky, patro s vývěsními štíty, krytá pasáž s lucernami, neony. +¥15 za osobu za stupeň.",max:4,cost:30000,g:6,at:[26,3.6]},
+ {id:"shrine",tab:2,jp:"神社",name:"Chrám s branou torii",desc:"Poutníci a turisté: první stupeň přidá 25 % cestujících, každý další 10 %. Každý stupeň chrám zkrášlí.",max:4,cost:700000,g:4,at:[38,9]},
+ {id:"onsen",tab:2,jp:"温泉",name:"Lázně onsen",desc:"Hosté z měst: o 15 % víc lidí a o 15 % vyšší jízdné.",max:3,cost:2.4e6,g:5,at:[6,25]},
+];
+const UPGMAP = Object.fromEntries(UPG.map(u=>[u.id,u]));
+const TABS = ["Koleje","Stanice","Okolí"];
+const blankL = ()=>Object.fromEntries(UPG.map(u=>[u.id,0]));
+const costOf = (u,l)=>{const c=u.cost*Math.pow(u.g,l);const m=Math.pow(10,Math.floor(Math.log10(c))-1);return Math.round(c/m)*m};
+function rates(L){
+  const demand=(0.32+0.1*L.houses+0.28*L.shops+(L.bike?0.3:0))
+    *(1+.08*L.decor)*(1+.06*L.walk)*(1+.08*L.homes)*(L.cafe?1.1:1)*(1+.12*L.canopy)*(1+.05*L.trees)*(1+.2*L.building)
+    *(L.bus?1.3:1)*(L.shrine?1.15+.1*L.shrine:1)*(1+.15*L.onsen);
+  const interval=Math.max(26,75*Math.pow(.88,L.sched)*(L.elec?.85:1));
+  const tracks=1+L.tracks, cars=1+L.cars;
+  const cap=Math.round(cars*50*(L.elec?1.25:1));
+  const capRate=tracks*cap/interval;
+  const fare=Math.round(150*(1+.25*L.machine)*(1+.2*L.building)*(1+.15*L.onsen)*(L.express?1.6:1)/10)*10;
+  const spend=20*L.vending+60*L.kiosk+25*L.shops+(L.cafe?30:0)+15*L.shopup*(L.shops?1:0);
+  const flow=Math.min(demand,capRate);
+  return {demand,interval,tracks,cars,cap,capRate,fare,spend,flow,perMin:flow*(fare+spend)*60};
+}
+
+/* ─────────────── STAV ─────────────── */
+const SAVE_KEY="komorebi-save-v1";
+let G={L:blankL(),money:600,total:0,pax:0,clock:.3,savedAt:Date.now(),waiting:5};
+function applySave(s){
+  if(!s||!s.L)return false;
+  G={...G,...s,L:{...blankL(),...s.L}};
+  return true;
+}
+function serialize(){return {L:G.L,money:G.money,total:G.total,pax:G.pax,clock:G.clock,savedAt:Date.now(),waiting:G.waiting}}
+function readLocal(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||"null")}catch(e){return null}}
+function writeLocal(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize()))}catch(e){}}
+function saveCloud(){writeLocal()}
+
+/* ─────────────── FORMÁTY ─────────────── */
+const nf=new Intl.NumberFormat("cs-CZ");
+function yen(v){
+  v=Math.floor(v);
+  if(v>=1e9)return "¥ "+(v/1e9).toLocaleString("cs-CZ",{maximumFractionDigits:2})+" mld.";
+  if(v>=1e7)return "¥ "+(v/1e6).toLocaleString("cs-CZ",{maximumFractionDigits:1})+" mil.";
+  return "¥ "+nf.format(v);
+}
+const $=id=>document.getElementById(id);
+let toastTimer;
+function toast(t,ms=2800){const el=$("toast");el.textContent=t;el.classList.add("on");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("on"),ms)}
+
+/* ─────────────── ROČNÍ OBDOBÍ A BARVY ─────────────── */
+function hex(c){return [parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]}
+const mixCache=new Map();
+function mix(a,b,t){
+  t=Math.round(t*32)/32;
+  const k=a+b+t;let r=mixCache.get(k);
+  if(r)return r;
+  const A=hex(a),B=hex(b);
+  r="#"+[0,1,2].map(i=>Math.round(A[i]+(B[i]-A[i])*t).toString(16).padStart(2,"0")).join("");
+  if(mixCache.size>6000)mixCache.clear();
+  mixCache.set(k,r);return r;
+}
+const dark=(c,t)=>mix(c,"#141a2c",t);
+const SEASONS=[
+ {name:"Jaro",grass:"#9cbf73",grass2:"#b1cc80",tree:"#5f9a58",tree2:"#7bb268",sakura:"#f4bcc9",sakura2:"#fbd8de",paddy:"#8fb9c0",paddy2:"#a7c98d",soil:"#a98f6c",snow:0},
+ {name:"Léto",grass:"#6fa65a",grass2:"#83b566",tree:"#3f8246",tree2:"#58994f",sakura:"#4f9150",sakura2:"#69a55c",paddy:"#6aa752",paddy2:"#88bf5f",soil:"#9b8460",snow:0},
+ {name:"Podzim",grass:"#b1a860",grass2:"#c2b56c",tree:"#c9772f",tree2:"#dd9a3e",sakura:"#c9503a",sakura2:"#e17a3f",paddy:"#d3ae4c",paddy2:"#e0c060",soil:"#a2835a",snow:0},
+ {name:"Zima",grass:"#e6ebee",grass2:"#f4f6f7",tree:"#6f8a7c",tree2:"#a9bdb3",sakura:"#8c7a70",sakura2:"#c9c4c0",paddy:"#d9e3e7",paddy2:"#ecf1f2",soil:"#b8b4ad",snow:1},
+];
+const DAY_LEN=150, SEASON_DAYS=3;
+const EVENT_BOOST=1.3;
+const EVENTS=[
+ {name:"Hanami",jp:"花見",text:"pikniky pod kvetoucími sakurami. Přijíždí o 30 % víc lidí."},
+ {name:"Letní matsuri",jp:"祭り",text:"stánky na náměstí a v noci ohňostroj. Přijíždí o 30 % víc lidí."},
+ {name:"Momiji",jp:"紅葉",text:"turisté míří za barevným listím. Přijíždí o 30 % víc lidí."},
+ {name:"Zimní slavnost luceren",jp:"雪灯り",text:"sněhové lucerny a hustý sníh. Přijíždí o 30 % víc lidí."},
+];
+let eventNow=-1,uiReady=false;
+let pal={},season=0,seasonName="Jaro",snow=0,night=0,hour=8;
+function updatePalette(){
+  const yearLen=SEASON_DAYS*4;
+  const d=(G.clock%yearLen);
+  const si=Math.floor(d/SEASON_DAYS), f=(d/SEASON_DAYS)-si;
+  season=si;seasonName=SEASONS[si].name;
+  const ev=Math.floor(d%SEASON_DAYS)===1?si:-1;
+  if(ev!==eventNow){eventNow=ev;if(ev>=0){toast(EVENTS[ev].name+": "+EVENTS[ev].text,6000);if(uiReady)blip()}}
+  const blend=Math.round(Math.max(0,(f-.8)/.2)*10)/10;
+  const a=SEASONS[si],b=SEASONS[(si+1)%4];
+  const p={};for(const k in a)if(typeof a[k]==="string"&&k!=="name")p[k]=mix(a[k],b[k],blend);
+  snow=a.snow+(b.snow-a.snow)*blend;
+  const key=si+":"+blend;
+  if(key!==pal.key)groundDirty=true;
+  if(ev===2){p.tree=mix(p.tree,"#c8402c",.55);p.tree2=mix(p.tree2,"#e8703a",.5);p.sakura=mix(p.sakura,"#c8302c",.5)}
+  p.key=key;pal=p;
+  const dayF=G.clock%1; hour=(dayF*24+0)%24;
+  // noc 19–5, plynulé přechody
+  const h=hour;
+  night=h<4.5||h>20?1:h<6.5?(6.5-h)/2:h>18?(h-18)/2:0;
+}
+const roofC=c=>mix(c,"#f2f5f7",snow*.82);
+
+/* ─────────────── KRESBA: ZÁKLAD ─────────────── */
+const HW=24,HH=12,ZU=24,MAPX=40,MAPY=28;
+const cv=$("scene"),ctx=cv.getContext("2d");
+let c=ctx;
+const px=(x,y,z=0)=>(x-y)*HW, py=(x,y,z=0)=>(x+y)*HH-z*ZU;
+function poly(pts,fill){c.beginPath();for(let i=0;i<pts.length;i+=3){const X=px(pts[i],pts[i+1]),Y=py(pts[i],pts[i+1],pts[i+2]);i?c.lineTo(X,Y):c.moveTo(X,Y)}c.closePath();c.fillStyle=fill;c.fill()}
+function top(x,y,z,dx,dy,f){poly([x,y,z,x+dx,y,z,x+dx,y+dy,z,x,y+dy,z],f)}
+function wallY(x0,x1,y,z0,z1,f){poly([x0,y,z0,x1,y,z0,x1,y,z1,x0,y,z1],f)}
+function wallX(x,y0,y1,z0,z1,f){poly([x,y0,z0,x,y1,z0,x,y1,z1,x,y0,z1],f)}
+function box(x,y,z,dx,dy,dz,f,side){
+  top(x,y,z+dz,dx,dy,f);
+  const s=side||f;
+  wallY(x,x+dx,y+dy,z,z+dz,dark(s,.12));
+  wallX(x+dx,y,y+dy,z,z+dz,dark(s,.28));
+}
+/* Sedlová střecha. along:"x" = hřeben podél osy x */
+function roof(x,y,z,dx,dy,h,col,opt={}){
+  const ov=opt.ov??.28, wall=opt.wall||"#e8e0d0", rc=roofC(col);
+  const x0=x-ov,x1=x+dx+ov,y0=y-ov,y1=y+dy+ov;
+  if((opt.along||"x")==="x"){
+    const r=y+dy/2;
+    poly([x0,y0,z,x1,y0,z,x1,r,z+h,x0,r,z+h],dark(rc,.05));
+    poly([x+dx,y,z,x+dx,r,z+h,x+dx,y+dy,z],dark(wall,.26));
+    poly([x0,r,z+h,x1,r,z+h,x1,y1,z,x0,y1,z],dark(rc,.14));
+    c.strokeStyle=dark(rc,.3);c.lineWidth=.6;c.beginPath();
+    for(let i=1;i<4;i++){const t=i/4,Y=r+(y1-r)*t,Z=z+h*(1-t);c.moveTo(px(x0,Y),py(x0,Y,Z));c.lineTo(px(x1,Y),py(x1,Y,Z))}c.stroke();
+    poly([x1,y0,z,x1,r,z+h,x1+.0,r,z+h-.13,x1,y0,z-.13],dark(rc,.38));
+    poly([x1,r,z+h,x1,y1,z,x1,y1,z-.13,x1,r,z+h-.13],dark(rc,.38));
+  }else{
+    const r=x+dx/2;
+    poly([x0,y0,z,x0,y1,z,r,y1,z+h,r,y0,z+h],dark(rc,.05));
+    poly([x,y+dy,z,x+dx,y+dy,z,r,y+dy,z+h],dark(wall,.13));
+    poly([r,y0,z+h,x1,y0,z,x1,y1,z,r,y1,z+h],dark(rc,.28));
+    c.strokeStyle=dark(rc,.42);c.lineWidth=.6;c.beginPath();
+    for(let i=1;i<4;i++){const t=i/4,X=r+(x1-r)*t,Z=z+h*(1-t);c.moveTo(px(X,y0),py(X,y0,Z));c.lineTo(px(X,y1),py(X,y1,Z))}c.stroke();
+    poly([x0,y1,z,r,y1,z+h,r,y1,z+h-.13,x0,y1,z-.13],dark(rc,.3));
+    poly([r,y1,z+h,x1,y1,z,x1,y1,z-.13,r,y1,z+h-.13],dark(rc,.3));
+  }
+}
+function textY(t,x,y,z,size,col,font){c.save();c.transform(1,.5,0,1,px(x,y),py(x,y,z));c.font=(font||"800 ")+size+"px "+'"Shippori Mincho","Noto Serif CJK JP",serif';c.fillStyle=col;c.textAlign="center";c.textBaseline="middle";c.fillText(t,0,0);c.restore()}
+function textX(t,x,y,z,size,col){c.save();c.transform(1,-.5,0,1,px(x,y),py(x,y,z));c.font="800 "+size+"px "+'"Shippori Mincho","Noto Serif CJK JP",serif';c.fillStyle=col;c.textAlign="center";c.textBaseline="middle";c.fillText(t,0,0);c.restore()}
+function winY(x0,x1,y,z0,z1){const w=mix("#7fa0b8","#ffe08a",night);wallY(x0,x1,y,z0,z1,w);if(night>.3)addLight((x0+x1)/2,y,(z0+z1)/2,.32,.5)}
+function winX(x,y0,y1,z0,z1){const w=mix("#5f7f96","#ffd477",night);wallX(x,y0,y1,z0,z1,w);if(night>.3)addLight(x,(y0+y1)/2,(z0+z1)/2,.32,.5)}
+
+/* Vrstvení: pásy podle y (koleje a perony jsou rovnoběžné), uvnitř pásu podle x+y */
+const STRIP=y=>y<4.72?0:y<5.82?1:y<11?2:y<12.5?3:y<14?4:y<15.5?5:y<17?6:y<18.5?7:y<20?8:y<21.5?9:10;
+let Q=[];
+const q=(x,y,fn,bias=0)=>Q.push({k:STRIP(y)*10000+x+y+bias,fn});
+let lights=[];
+function addLight(x,y,z,r,a){lights.push(px(x,y),py(x,y,z),r,a)}
+
+/* ─────────────── ZEMĚ (uložená do vlastního plátna) ─────────────── */
+let groundDirty=true;
+const groundCanvas=document.createElement("canvas");
+const GPAD=30,GMINX=-MAPY*HW-GPAD,GMINY=-GPAD,GW=(MAPX+MAPY)*HW+GPAD*2,GH=(MAPX+MAPY)*HH+GPAD*2+60,GS=1.6;
+function rng(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+const TRACKY=[13.25,14.75,17.75,19.25];
+function buildGround(){
+  groundCanvas.width=GW*GS;groundCanvas.height=GH*GS;
+  const g=groundCanvas.getContext("2d");
+  g.setTransform(GS,0,0,GS,-GMINX*GS,-GMINY*GS);
+  const old=c;c=g;
+  // hrana diorámy
+  const earth=mix("#8a7158","#b9b6ae",snow*.5);
+  wallY(0,MAPX,MAPY,-1.6,0,dark(earth,.18));wallX(MAPX,0,MAPY,-1.6,0,dark(earth,.34));
+  wallY(0,MAPX,MAPY,-1.6,-1.15,dark(earth,.34));wallX(MAPX,0,MAPY,-1.6,-1.15,dark(earth,.48));
+  top(0,0,0,MAPX,MAPY,pal.grass);
+  // skvrny trávy
+  const r=rng(77);
+  for(let i=0;i<260;i++){const s=.5+r()*1.6,d=s*.7,x=r()*(MAPX-s),y=r()*(MAPY-d);top(x,y,0,s,d,pal.grass2)}
+  const asphalt=mix("#7b8088","#b9bfc4",snow*.7), paving=mix("#c9bfa8","#e4e6e6",snow*.6), lineC=mix("#e9e5d3","#ffffff",snow);
+  // ulice a příčná silnice
+  top(0,4,0,MAPX,1.8,asphalt);
+  top(33,0,0,2,MAPY,asphalt);
+  for(let x=1;x<MAPX;x+=2.2){if(x>31.3&&x<36.2)continue;top(x,4.87,0,1.1,.06,lineC)}
+  for(let y=1;y<MAPY;y+=2.2){if(y>1.8&&y<7||y>12&&y<21)continue;top(33.97,y,0,.06,1.1,lineC)}
+  // přechod pro chodce u křižovatky
+  for(const y of [5.97,3.11])for(let x=33.08;x<34.9;x+=.34)top(x,y,.005,.18,.72,lineC); // přes silnici
+  for(const x of [32.12,35.13])for(let y=4.08;y<5.7;y+=.34)top(x,y,.005,.75,.18,lineC); // přes ulici
+  top(34,5.87,.005,1,.05,lineC);top(33,6.78,.005,1,.05,lineC);
+  top(34,3.04,.005,1,.05,lineC);top(33,3.9,.005,1,.05,lineC);
+  top(35.95,4.87,.005,.05,.93,lineC);
+  // náměstí
+  top(19,5.8,0,8,5.2,paving);
+  const pv=dark(paving,.08);
+  for(let x=19;x<27;x+=1.6)top(x,5.8,0,.04,5.2,pv);
+  for(let y=5.8;y<11;y+=1.3)top(19,y,0,8,.04,pv);
+  // chodník pod budovou a u peronu
+  top(10,6,0,9,5,mix("#b9ad96","#dcdedd",snow*.6));
+  // chodníky (položka v Okolí)
+  if(G.L.walk>=1){
+    const sw=mix("#cfcbc0","#eceeee",snow*.7);
+    const seg=(x,y,dx,dy)=>box(x,y,0,dx,dy,.05,sw,dark(sw,.12));
+    seg(0,3.55,33,.45);seg(35,3.55,5,.45);
+    seg(0,5.8,10,.45);seg(27,5.8,6,.45);seg(35,5.8,5,.45);
+    if(G.L.walk>=2){
+      for(const [y,dy] of [[0,3.55],[6.25,5.85],[21.4,6.6]]){seg(32.5,y,.5,dy);seg(35,y,.5,dy)}
+    }
+  }
+  // nádvoří chrámu a kamenná cesta
+  if(G.L.shrine>=2){
+    top(35.7,6.15,0,4.3,5.9,mix("#d9cfb8","#eef0f1",snow*.7));
+    const pv=mix("#9b978c","#c9cbca",snow*.5);
+    for(let y=9.75;y<12.1;y+=.32)top(37.4,y,.002,1,.26,pv);
+  }
+  // rýžová pole
+  for(let i=0;i<4;i++)for(let j=0;j<2;j++){
+    const x=10.5+i*5.6,y=23.2+j*2.35;
+    if(x+5>33)continue;
+    top(x-.1,y-.1,0,5.2,2.3,pal.soil);
+    top(x,y,0,5,2.1,season===1||season===2?pal.paddy:pal.paddy);
+    g.strokeStyle=pal.paddy2;g.lineWidth=1.2;g.beginPath();
+    for(let k=.3;k<5;k+=.42){g.moveTo(px(x+k,y+.08),py(x+k,y+.08));g.lineTo(px(x+k,y+2.02),py(x+k,y+2.02))}g.stroke();
+  }
+  // štěrkové lože a koleje
+  const n=1+G.L.tracks;
+  const bal=mix("#8d8678","#c9cac8",snow*.65);
+  for(let t=0;t<n;t++){
+    const Y=TRACKY[t];
+    top(0,Y-.7,0,MAPX,1.4,bal);
+    g.fillStyle=dark(bal,.08);
+    for(let x=.2;x<MAPX;x+=.55)top(x,Y-.52,.02,.2,1.04,mix("#5d4a39","#8a837b",snow*.4));
+    top(0,Y-.38,.04,MAPX,.07,"#5c6068");top(0,Y+.31,.04,MAPX,.07,"#5c6068");
+  }
+  // přejezd
+  const lastY=TRACKY[n-1]+.8;
+  top(33,12.4,.02,2,lastY-12.4,mix("#7b8088","#b9bfc4",snow*.4));
+  for(let t=0;t<n;t++){const Y=TRACKY[t];top(33,Y-.65,.06,2,1.3,"#4b4f55");top(33,Y-.38,.07,2,.07,"#8e949a");top(33,Y+.31,.07,2,.07,"#8e949a")}
+  top(33,12.3,.03,2,.12,"#f0c93a");top(33,lastY,.03,2,.12,"#f0c93a");
+  c=old;groundDirty=false;
+}
+
+/* ─────────────── SCÉNA: STATICKÉ OBJEKTY ─────────────── */
+const HOUSE_INIT=[[4.6,.8],[11.6,.8],[1,6.6]];
+const HOUSE_SPOTS=[[8.1,.8],[1,.8],[15.2,.8],[4.7,6.6],[8,6.6],[29.4,6.3],[36.3,22.2],[1,9.5],[36.3,25.2],[36.4,.7]];
+const HCOL=[["#e8dcc6","#47566a"],["#d8c3a4","#7a4a3a"],["#efe9dc","#39506b"],["#cfb48e","#4e4e52"],["#e4d3bd","#65443a"],["#dfe2d8","#2f4a58"]];
+const LAUNDRY=["#f4f4ee","#7fa8c9","#e8778f","#e6c04c","#9cc29a"];
+function house(x,y,i){
+  const [w0,rf0]=HCOL[i%HCOL.length],l=G.L.homes;
+  const dx=2.8,dy=2.5,alongX=i%2===0,f=y+dy,e=x+dx;
+  const w=l>=1?mix(w0,"#ffffff",.25):w0,rf=l>=3?dark(rf0,.08):rf0,tall=l>=2,H=tall?2.05:1.15,rh=.85;
+  q(x+dx/2,y+dy/2,()=>{
+    box(x,y,0,dx,dy,H,w);
+    box(x-.04,y-.04,0,dx+.08,dy+.08,.15,dark(w,.35));
+    // přízemí
+    winY(x+.4,x+1.05,f,.42,.92);
+    wallY(x+1.75,x+2.3,f,0,.85,l>=1?"#7a3f39":"#6c4a33");
+    winX(e,y+.7,y+1.7,.42,.92);
+    if(l>=1){
+      // schodek, stříška a lampička u dveří
+      box(x+1.68,f,0,.7,.2,.08,"#b7b0a4");
+      poly([x+1.65,f,1.02,x+2.4,f,1.02,x+2.4,f+.28,.88,x+1.65,f+.28,.88],dark(rf,.1));
+      wallY(x+2.36,x+2.44,f,.62,.74,mix("#e9e4cc","#ffe9a0",night));
+      if(night>.2)addLight(x+2.4,f,.68,.42,.65);
+    }
+    if(tall){
+      // druhé patro: pásek mezi patry, okna se závěsy
+      wallY(x,e,f,1.12,1.2,dark(w,.2));wallX(e,y,f,1.12,1.2,dark(w,.36));
+      for(const a of [x+.4,x+1.65]){
+        winY(a,a+.7,f,1.42,1.9);
+        wallY(a,a+.16,f,1.42,1.9,"#e8dfc9");wallY(a+.54,a+.7,f,1.42,1.9,"#e8dfc9");
+      }
+      winX(e,y+.7,y+1.7,1.42,1.9);
+    }
+    if(l>=3){
+      // parapety, poštovní schránka a balkon se sušícím se prádlem
+      wallY(x+.34,x+1.11,f,.36,.42,"#f4f2ea");wallX(e,y+.64,y+1.76,.36,.42,"#f4f2ea");
+      box(x+1.32,f+.02,.5,.2,.08,.2,"#b8402f");
+      const zb=1.3,by0=f,by1=f+.42,bx0=x+.2,bx1=x+2.55;
+      top(bx0,by0,zb,bx1-bx0,.42,"#b9b4a7");
+      wallY(bx0,bx1,by1,zb-.08,zb,"#8b8678");wallX(bx1,by0,by1,zb-.08,zb,"#6f6a5d");
+      // prádlo na šňůře
+      c.strokeStyle="#55606c";c.lineWidth=.7;c.beginPath();c.moveTo(px(bx0+.1,by1-.1),py(bx0+.1,by1-.1,zb+.72));c.lineTo(px(bx1-.1,by1-.1),py(bx1-.1,by1-.1,zb+.72));c.stroke();
+      for(let k=0;k<4;k++){
+        const a=bx0+.3+k*.48,col=LAUNDRY[(i+k)%LAUNDRY.length];
+        wallY(a,a+.3,by1-.1,zb+.34+(k%2)*.1,zb+.72,col);
+      }
+      // zábradlí
+      wallY(bx0,bx1,by1,zb,zb+.36,"rgba(90,100,110,.32)");
+      c.strokeStyle="#5a6470";c.lineWidth=1;c.beginPath();c.moveTo(px(bx0,by1),py(bx0,by1,zb+.36));c.lineTo(px(bx1,by1),py(bx1,by1,zb+.36));c.lineTo(px(bx1,by0),py(bx1,by0,zb+.36));c.stroke();
+      for(let a=bx0;a<=bx1+.01;a+=.235){c.beginPath();c.moveTo(px(a,by1),py(a,by1,zb));c.lineTo(px(a,by1),py(a,by1,zb+.36));c.stroke()}
+    }
+    roof(x,y,H,dx,dy,rh,rf,{along:alongX?"x":"y",wall:w});
+    if(l>=2){ // venkovní jednotka klimatizace
+      box(e,y+.08,0,.2,.46,.3,"#d9dbd6");
+      wallX(e+.2,y+.14,y+.48,.04,.26,"#7e8388");
+    }
+    if(l>=3){ // hřebenáče
+      const rc=roofC("#23262c");
+      if(alongX)top(x-.28,y+dy/2-.05,H+rh,dx+.56,.1,rc);else top(x+dx/2-.05,y-.28,H+rh,.1,dy+.56,rc);
+    }
+    if(l>=4){
+      // solární panely na slunné straně střechy
+      const ov=.28;
+      c.lineWidth=.6;
+      for(let n=0;n<3;n++){
+        if(alongX){
+          const r=y+dy/2,y1=y+dy+ov,xa=x+.2+n*.8,xb=xa+.72,Ya=r+(y1-r)*.14,Yb=r+(y1-r)*.72,Za=H+rh*(1-.14),Zb=H+rh*(1-.72);
+          poly([xa,Ya,Za+.02,xb,Ya,Za+.02,xb,Yb,Zb+.02,xa,Yb,Zb+.02],"#1d3a66");
+          c.strokeStyle="#7fa2c9";c.beginPath();c.moveTo(px((xa+xb)/2,Ya),py((xa+xb)/2,Ya,Za+.02));c.lineTo(px((xa+xb)/2,Yb),py((xa+xb)/2,Yb,Zb+.02));
+          const Ym=(Ya+Yb)/2,Zm=(Za+Zb)/2;c.moveTo(px(xa,Ym),py(xa,Ym,Zm+.02));c.lineTo(px(xb,Ym),py(xb,Ym,Zm+.02));c.stroke();
+        }else{
+          const r=x+dx/2,x1=x+dx+ov,ya=y+.1+n*.8,yb=ya+.72,Xa=r+(x1-r)*.14,Xb=r+(x1-r)*.72,Za=H+rh*(1-.14),Zb=H+rh*(1-.72);
+          poly([Xa,ya,Za+.02,Xa,yb,Za+.02,Xb,yb,Zb+.02,Xb,ya,Zb+.02],"#1d3a66");
+          c.strokeStyle="#7fa2c9";c.beginPath();c.moveTo(px(Xa,(ya+yb)/2),py(Xa,(ya+yb)/2,Za+.02));c.lineTo(px(Xb,(ya+yb)/2),py(Xb,(ya+yb)/2,Zb+.02));
+          const Xm=(Xa+Xb)/2,Zm=(Za+Zb)/2;c.moveTo(px(Xm,ya),py(Xm,ya,Zm+.02));c.lineTo(px(Xm,yb),py(Xm,yb,Zm+.02));c.stroke();
+        }
+      }
+    }
+  });
+  if(l>=1){
+    // nízká zídka s brankou a květináče
+    const fy=f+.2,wall=mix("#b9b3a4","#e5e7e7",snow*.5);
+    q(x+.8,fy,()=>{
+      box(x-.02,fy,0,1.62,.07,.22,wall);box(x+2.44,fy,0,.4,.07,.22,wall);
+      box(x+1.6,fy-.04,0,.06,.12,.3,"#7b7366");box(x+2.38,fy-.04,0,.06,.12,.3,"#7b7366");
+      if(l>=3)box(x+1.62,fy+.01,.2,.18,.05,.12,"#b8402f");
+    },.1);
+    flower(x+.1,f+.03,0);flower(x+1.25,f+.03,0);
+  }
+  if(l>=4){
+    // borovička a kamenná lucerna v bočním koutě zahrady
+    const bx=e+.3,by=f-.25;
+    q(bx,by,()=>{
+      const X=px(bx,by),Y=py(bx,by);
+      c.fillStyle="rgba(20,30,40,.15)";c.beginPath();c.ellipse(X,Y,7,3,0,0,6.3);c.fill();
+      c.strokeStyle="#5e4634";c.lineWidth=2;c.beginPath();c.moveTo(X,Y);c.quadraticCurveTo(X-4,Y-7,X+1,Y-13);c.stroke();
+      const g=snow>.6?"#dfe6e4":"#3f7a4f",g2=snow>.6?"#f2f5f5":"#5b9a62";
+      for(const [a,b2,r] of [[-5,-9,4.5],[4,-12,4.2],[0,-16,4.8]]){c.fillStyle=g;c.beginPath();c.ellipse(X+a,Y+b2,r*1.25,r*.68,0,0,6.3);c.fill();c.fillStyle=g2;c.beginPath();c.ellipse(X+a-.8,Y+b2-1,r*.8,r*.34,0,0,6.3);c.fill()}
+    },.2);
+    stoneLantern(x+.72,f+.1,true,.3);
+  }
+}
+const SHOPS=[["茶","#6b8e4e"],["花","#cf6a7f"],["魚","#3f7fa8"],["本","#a0703c"],["麺","#cf4a33"]];
+const SHOP_GOODS=[["#7da25a","#a9c47c"],["#e36f8d","#f2c94c"],["#9fc3d6","#e8e6df"],["#c9a26b","#7c5a86"],["#e8c98a","#cf4a33"]];
+function shop(i){
+  const x=20.5+i*2.5,y=.9,dx=2.3,dy=2.5,[k,col]=SHOPS[i],l=G.L.shopup,f=y+dy,e=x+dx;
+  const wall=l>=1?"#f2eadb":"#e6dccb",H=l>=2?2.75:1.7;
+  q(x+dx/2,y+dy/2,()=>{
+    box(x,y,0,dx,dy,H,wall);
+    wallY(x+.15,e-.15,f,.05,.85,mix("#3a4252","#ffdf8f",night));
+    if(l>=1){ // výkladní rámy
+      for(const a of [x+.15,x+dx/2-.02,e-.19])wallY(a,a+.04,f,.05,.85,"#6b4a36");
+      wallY(x+.15,e-.15,f,.85,.9,"#6b4a36");
+    }
+    if(night>.3)addLight(x+dx/2,f,.5,.55,.55);
+    // markýza
+    if(l<3){
+      poly([x-.04,f,1.05,e+.04,f,1.05,e+.04,f+.55,.82,x-.04,f+.55,.82],col);
+      if(l>=1)for(let a=x+.12;a<e;a+=.42)poly([a,f,1.05,a+.2,f,1.05,a+.2,f+.55,.82,a,f+.55,.82],mix(col,"#ffffff",.55));
+      poly([e+.04,f,1.05,e+.04,f+.55,.82,e+.04,f,.82],dark(col,.3));
+    }
+    wallY(x+.45,e-.45,f,1.16,1.62,"#fbfcfa");
+    textY(k,x+dx/2,f,1.39,13,col);
+    if(l>=2){
+      // patro s okny a římsou
+      wallY(x,e,f,1.72,1.8,dark(wall,.22));wallX(e,y,f,1.72,1.8,dark(wall,.36));
+      for(const a of [x+.28,x+1.3]){winY(a,a+.72,f,2,2.5);wallY(a-.03,a+.75,f,1.95,2,"#f6f4ec")}
+      if(i===G.L.shops-1)winX(e,y+.8,y+1.7,2,2.5); // boční okno jen u posledního, jinak ho zakrývá soused
+    }
+    roof(x,y,H,dx,dy,.55,l>=2?"#3e4a5c":"#4d5868",{wall});
+    if(l>=4&&i%2===0){
+      // reklamní tabule na střeše
+      const bx=x+.45,by=y+.75;
+      box(bx,by,H+.45,.06,.06,.5,"#59646f");box(bx+1.3,by,H+.45,.06,.06,.5,"#59646f");
+      wallY(bx-.1,bx+1.46,by+.06,H+.75,H+1.25,mix(col,"#ffffff",.12));
+      textY(k+k,bx+.68,by+.06,H+1,12,"#fbfcfa");
+      if(night>.2)addLight(bx+.68,by+.06,H+1,.9,.7);
+    }
+  });
+  // detaily před obchodem
+  if(l>=1){
+    const [g1,g2]=SHOP_GOODS[i];
+    q(x+.8,f+.28,()=>{
+      // stánek se zbožím
+      box(x+.14,f+.08,0,.9,.36,.26,"#b98a55");
+      top(x+.17,f+.11,.262,.84,.3,g1);
+      for(let n=0;n<5;n++){const X=px(x+.25+n*.16,f+.18+(n%2)*.13),Y=py(x+.25+n*.16,f+.18+(n%2)*.13,.3);c.fillStyle=n%2?g2:dark(g1,.12);c.beginPath();c.arc(X,Y,1.9,0,6.3);c.fill()}
+    },.1);
+    // praporek nobori
+    q(e-.15,f+.42,()=>{
+      const X=e-.15,Y=f+.42;
+      box(X-.015,Y-.015,0,.03,.03,1.5,"#5a6470");
+      const wv=Math.sin(performance.now()/700+i)*.015;
+      poly([X+.02,Y,1.42,X+.34,Y+wv,1.42,X+.34,Y+wv,.5,X+.02,Y,.5],col);
+      textY(k,X+.18,Y,1.06,8.5,"#fbfcfa");
+    },.15);
+  }
+  if(l>=2){
+    // svislý vývěsní štít
+    q(e,f+.15,()=>{
+      poly([e+.02,f-.02,2.6,e+.02,f+.34,2.6,e+.02,f+.34,1.72,e+.02,f-.02,1.72],l>=4?dark(col,.25):col);
+      textX(k,e+.02,f+.16,2.16,12,"#fbfcfa");
+      if(l>=4){ // neonový rám
+        const n=mix("#ffe28a","#fff6c9",night);
+        c.strokeStyle=n;c.lineWidth=1.1;c.beginPath();
+        c.moveTo(px(e+.02,f+.01),py(e+.02,f+.01,2.56));c.lineTo(px(e+.02,f+.31),py(e+.02,f+.31,2.56));c.lineTo(px(e+.02,f+.31),py(e+.02,f+.31,1.76));c.lineTo(px(e+.02,f+.01),py(e+.02,f+.01,1.76));c.closePath();c.stroke();
+        addLight(e+.02,f+.16,2.16,.45,night>.1?.55:0);
+      }
+    },.2);
+  }
+  if(l>=3){
+    // krytá pasáž: prosklená střecha, sloupky, šňůra lucerniček
+    const ax=x-.1,bx=x+2.4,ya=f,yb=f+.56,Z=1.78;
+    for(const X of [ax+.04,bx-.04])q(X,yb,()=>box(X-.03,yb-.03,0,.06,.06,Z,"#5a6470"),.2);
+    q((ax+bx)/2,yb,()=>{
+      poly([ax,ya,Z+.16,bx,ya,Z+.16,bx,yb,Z,ax,yb,Z],"rgba(190,222,232,.55)");
+      wallY(ax,bx,yb,Z-.07,Z,col);
+      top(ax,ya-.04,Z+.16,bx-ax,.05,"#5a6470");
+      for(let n=0;n<5;n++){
+        const a=ax+.24+n*.5,X=px(a,yb),Y=py(a,yb,Z-.26);
+        c.strokeStyle="#3a2f2a";c.lineWidth=.7;c.beginPath();c.moveTo(X,Y-5);c.lineTo(X,Y-2);c.stroke();
+        c.fillStyle=mix(n%2?"#d6432f":"#f0e4c8",n%2?"#ff9b5f":"#ffe9a8",night);c.beginPath();c.ellipse(X,Y,2.6,3.2,0,0,6.3);c.fill();
+        if(night>.2)addLight(a,yb,Z-.26,.32,.8);
+      }
+      if(l>=4)for(let n=0;n<3;n++){ // slavnostní stuhy
+        const a=ax+.5+n*.75,X=px(a,yb),Y=py(a,yb,Z-.06),C=["#e8778f","#e6c04c","#7fa8c9","#9cc29a"];
+        for(let m=0;m<4;m++){const sw=Math.sin(performance.now()/800+m+n+i)*1.3;c.strokeStyle=C[(m+i+n)%4];c.lineWidth=1.3;c.beginPath();c.moveTo(X+m*1.4-2,Y);c.quadraticCurveTo(X+m*1.4-2+sw,Y+7,X+m*1.4-2,Y+13);c.stroke()}
+      }
+    },.6);
+  }
+}
+function tree(x,y,s=1,kind=0){
+  q(x,y,()=>{
+    c.fillStyle="rgba(20,30,40,.13)";c.beginPath();c.ellipse(px(x,y),py(x,y),17*s,8*s,0,0,6.3);c.fill();
+    const tx=px(x,y),ty=py(x,y);
+    c.fillStyle="#6a5040";c.fillRect(tx-2*s,ty-26*s,4*s,26*s);
+    const A=kind?pal.sakura:pal.tree,B=kind?pal.sakura2:pal.tree2;
+    if(kind&&snow>.7){ // holé větve
+      c.strokeStyle="#6a5040";c.lineWidth=1.6*s;c.beginPath();
+      for(const [a,b] of [[-13,-40],[11,-44],[-7,-48],[3,-38],[15,-34],[-15,-30]]){c.moveTo(tx,ty-24*s);c.lineTo(tx+a*s,ty+b*s)}
+      c.stroke();return;
+    }
+    const blobs=[[-10,-30,12],[10,-32,12],[0,-42,14],[0,-28,13],[-5,-38,9],[8,-42,8]];
+    for(let i=0;i<blobs.length;i++){const b=blobs[i];c.fillStyle=i>3?B:i===3?dark(A,.08):A;c.beginPath();c.arc(tx+b[0]*s,ty+b[1]*s,b[2]*s,0,6.3);c.fill()}
+    if(snow>.5&&!kind){c.fillStyle="#f6f8f9";c.beginPath();c.arc(tx,ty-46*s,8*s,0,6.3);c.fill()}
+  });
+}
+const TREES=[[0.6,4],[28.2,7.5],[35.9,3.3],[39.4,3],[36.1,11.6],[39.4,11.6],[39.5,21],[39.6,23.6],[9.7,27.3],[1.2,21],[4.3,11.7],[9.8,10],[32.2,23.4],[32,27]];
+
+function lamp(x,y,z=0){
+  q(x,y,()=>{box(x-.04,y-.04,z,.08,.08,1.5,"#3b4656");box(x-.11,y-.11,z+1.5,.22,.22,.16,mix("#f0e8d0","#fff2b0",night));
+  if(night>.15)addLight(x,y,z+1.58,1.1,.85)});
+}
+function streetLamp(x,y,dir){
+  // pouliční lampa s ramenem nad vozovkou; dir: -1 k severu, 1 k jihu
+  q(x,y,()=>{
+    const hy=y+dir*.5,H=2.05,on=night>.15;
+    box(x-.07,y-.07,0,.14,.14,.14,"#39424f");
+    box(x-.035,y-.035,.14,.07,.07,H-.14,"#4a5462");
+    c.strokeStyle="#4a5462";c.lineWidth=1.7;c.beginPath();c.moveTo(px(x,y),py(x,y,H));c.quadraticCurveTo(px(x,y+dir*.2),py(x,y+dir*.2,H+.2),px(x,hy),py(x,hy,H+.04));c.stroke();
+    box(x-.09,hy-.15,H-.05,.18,.3,.06,"#39424f");
+    top(x-.07,hy-.12,H-.055,.14,.24,mix("#e8e6da","#fff2b0",night));
+    if(on){addLight(x,hy,H-.1,.8,.95);addLight(x,hy,.05,1.8,.34)}
+  },.5);
+}
+function vending(x,y,z,col){
+  q(x,y,()=>{box(x,y,z,.42,.32,.82,col);wallY(x+.05,x+.37,y+.32,z+.3,z+.74,mix("#dce9f0","#fff7cc",night));wallY(x+.05,x+.37,y+.32,z+.06,z+.18,"#222a33");if(night>.3)addLight(x+.2,y+.32,z+.5,.42,.55)});
+}
+function bench(x,y,z){q(x,y,()=>{box(x,y,z+.22,.95,.22,.05,"#a6784f");box(x+.08,y+.05,z,.06,.12,.22,"#3b4656");box(x+.8,y+.05,z,.06,.12,.22,"#3b4656")})}
+function flower(x,y,z){q(x,y,()=>{box(x,y,z,.34,.34,.2,"#a65f3f");const X=px(x+.17,y+.17),Y=py(x+.17,y+.17,z+.34);const f=snow>.6?"#7d8c84":season===2?"#d98a3a":"#e36f8d";c.fillStyle="#5f9a58";c.beginPath();c.arc(X,Y,5,0,6.3);c.fill();c.fillStyle=f;for(const [a,b] of [[-3,-1],[3,0],[0,-3]]){c.beginPath();c.arc(X+a,Y+b,2,0,6.3);c.fill()}})}
+
+const PLAT={A:{x0:5,x1:29,y0:11,y1:12.5},I:{x0:5,x1:29,y0:15.5,y1:17},C:{x0:5,x1:29,y0:20,y1:21.5}};
+function platform(p,edgeA,edgeB){
+  const P=PLAT[p],dy=P.y1-P.y0,dx=P.x1-P.x0;
+  Q.push({k:STRIP(P.y0)*10000-500,fn:()=>{
+    const f=mix("#c9c7c0","#eef0f1",snow*.8);
+    box(P.x0,P.y0,0,dx,dy,.5,f,"#a8a59b");
+    if(edgeA)top(P.x0,P.y0+.14,.5,dx,.14,"#e9c63c");
+    if(edgeB)top(P.x0,P.y1-.28,.5,dx,.14,"#e9c63c");
+    top(P.x0,edgeB?P.y1-.08:P.y1-.08,.5,dx,.08,"#f4f4ee");
+  }});
+  // staniční cedule
+  [9.5,24.5].forEach(x=>{const y=P.y0+dy/2;q(x,y,()=>{
+    box(x-.03,y,.5,.06,.06,1,"#3b4656");box(x+.93,y,.5,.06,.06,1,"#3b4656");
+    wallY(x-.05,x+1.05,y+.06,1.05,1.55,"#fbfcfa");wallY(x-.05,x+1.05,y+.06,1.14,1.2,"#1f8a78");
+    textY("木漏れ日",x+.5,y+.06,1.38,6.5,"#1c2a3f");
+  })});
+}
+function canopy(p,lv){
+  if(!lv)return;
+  const P=PLAT[p],y=P.y0+.45,dy=P.y1-P.y0-.9;
+  const [a,b]=lv===1?[13,21]:lv===2?[9.5,24.5]:[6,28];
+  for(let x=a;x<=b+.01;x+=3.5){q(x,y+dy/2,()=>box(x-.05,y+dy/2-.05,.5,.1,.1,1.5,"#4a5666"))}
+  q((a+b)/2,y+dy/2,()=>{
+    const rc=roofC("#55708a");
+    box(a-.3,y-.12,2,b-a+.6,dy+.24,.09,rc,"#38485a");
+    if(night>.15)for(let x=a+1;x<b;x+=3.5)addLight(x,y+dy/2,1.95,.9,.55);
+  },500);
+}
+function stairs(y,x0,x1,z0,z1){
+  q((x0+x1)/2,y,()=>{
+    const n=7;for(let i=0;i<n;i++){const t=i/n,xa=x0+(x1-x0)*t,w=(x1-x0)/n;
+      const zt=z0+(z1-z0)*(1-t);box(xa,y-.32,z0,w,.64,Math.max(.05,zt-z0),"#a9adb0")}
+      },30);
+}
+function bridge(endY){
+  const x=7.6,w=1;
+  [[11.3],[endY-.1]].forEach(([y])=>q(x+.5,y,()=>box(x+.4,y-.1,.5,.14,.14,2.1,"#6f7c88")));
+  // patky přes pásy
+  for(let y=11.2;y<endY+.5;y+=1){
+    const Y=y;
+    q(x+.5,Y+.5,()=>{
+      top(x,Y,2.6,w,1.02,mix("#7f9aa8","#eef0f1",snow*.7));
+      wallY(x,x+w,Y+1,2.45,2.6,"#55697a");
+      wallX(x+w,Y,Y+1,2.45,2.6,"#435564");
+      wallX(x+w,Y,Y+1,2.6,3,"rgba(195,215,225,.35)");
+    },600);
+  }
+}
+
+/* Nádražní budova */
+function station(){
+  const lv=G.L.building;
+  const x0=lv>=1?11:13.2,x1=19,y0=lv>=2?6.6:7.6,y1=11;
+  q((x0+x1)/2,(y0+y1)/2,()=>{
+    const wall=lv>=2?"#f0ece2":"#e9dcc4",beam="#6e4c34";
+    box(x0,y0,0,x1-x0,y1-y0,1.55,wall);
+    // okna a dveře na peron
+    for(let x=x0+.5;x<x1-.6;x+=1.35){if(Math.abs(x-15)<.8)continue;winY(x,x+.8,y1,.55,1.2)}
+    wallY(14.6,15.5,y1,0,1.15,"#39414f");
+    wallY(x0,x1,y1,1.42,1.55,beam);
+    // vstup z náměstí
+    wallX(x1,8.9,10.1,0,1.2,mix("#39414f","#ffe09a",night));
+    if(night>.2)addLight(x1,9.5,.7,.9,.6);
+    wallX(x1,7.9,8.5,.55,1.2,mix("#5f7f96","#ffd477",night));
+    if(lv===0)for(let x=x0;x<=x1;x+=1.55)wallY(x,x+.07,y1,0,1.45,beam);
+    // cedule nad vstupem
+    wallX(x1+.01,8.4,10.6,1.28,1.72,"#fbfcfa");
+    textX("木漏れ日駅",x1+.01,9.5,1.5,13,"#1c2a3f");
+    if(lv>=2){
+      const a=x0+1.1,b=x1-1;
+      box(a,y0+.5,1.55,b-a,y1-y0-1.3,1.1,"#f4f1e8");
+      roof(x0,y0,1.55,x1-x0,y1-y0,.01,"#4a5a70",{wall,ov:.35});
+      for(let x=a+.3;x<b-.5;x+=1.2)winY(x,x+.75,y1-.8,1.95,2.4);
+      roof(a,y0+.5,2.65,b-a,y1-y0-1.3,.9,"#42546b",{wall:"#f4f1e8"});
+    }else{
+      roof(x0,y0,1.55,x1-x0,y1-y0,1.05,lv?"#42546b":"#5a5f66",{wall});
+    }
+    if(lv>=3){
+      const tx=x1-1.7,ty=y1-1.6;
+      box(tx,ty,1.55,1.2,1.2,2.9,"#f0ece2");
+      const Y=ty+1.2,Xc=tx+.6,z=3.8,X=px(Xc,Y),Yy=py(Xc,Y,z);
+      c.save();c.transform(1,.5,0,1,X,Yy);c.fillStyle="#fbfcfa";c.beginPath();c.arc(0,0,10,0,6.3);c.fill();c.strokeStyle="#1c2a3f";c.lineWidth=1.4;c.stroke();
+      const hA=hour/12*6.283,mA=(hour%1)*6.283;c.beginPath();c.moveTo(0,0);c.lineTo(Math.sin(hA)*5.5,-Math.cos(hA)*5.5);c.moveTo(0,0);c.lineTo(Math.sin(mA)*8,-Math.cos(mA)*8);c.stroke();c.restore();
+      roof(tx,ty,4.45,1.2,1.2,.75,"#42546b",{wall:"#f0ece2",ov:.18});
+    }
+  });
+}
+
+function stoneLantern(x,y,lit,glowR=.75){
+  q(x,y,()=>{
+    const st=mix("#a9a79e","#dfe2e2",snow*.5);
+    box(x-.13,y-.13,0,.26,.26,.07,st);
+    box(x-.05,y-.05,.07,.1,.1,.34,st);
+    box(x-.12,y-.12,.41,.24,.24,.2,lit?mix("#d9d4c2","#ffdf8f",Math.max(night,.3)):st);
+    box(x-.17,y-.17,.61,.34,.34,.06,dark(st,.1));
+    poly([x-.17,y+.17,.67,x+.17,y+.17,.67,x,y,.82],dark(st,.18));
+    poly([x+.17,y-.17,.67,x+.17,y+.17,.67,x,y,.82],dark(st,.3));
+    if(lit&&night>.15)addLight(x,y,.5,glowR,.8);
+  });
+}
+function torii(tx,ty,sc){
+  q(tx+.65*sc,ty,()=>{
+    const r="#d2472f",w=1.3*sc,H=1.75*sc;
+    box(tx-.1*sc,ty,0,.16*sc,.16,H,r);box(tx+w-.06*sc,ty,0,.16*sc,.16,H,r);
+    box(tx-.25*sc,ty,1.35*sc,w+.5*sc,.1,.1*sc,r);
+    box(tx-.5*sc,ty-.04,H,w+1*sc,.18,.13*sc,"#2e2e33");
+    wallY(tx-.5*sc,tx+w+.5*sc,ty+.14,H,H+.13*sc,"#2e2e33");
+  });
+}
+function pagoda(cx,cy){
+  // tříposchoďová pagoda s lehce zdviženými rohy střech
+  q(cx,cy,()=>{
+    const red="#c8412e",rf="#3c3f49";
+    box(cx-.68,cy-.68,0,1.36,1.36,.18,"#b7b0a4");
+    let z=.18,w=.48;
+    for(let i=0;i<3;i++){
+      box(cx-w,cy-w,z,w*2,w*2,.52,red);
+      const X=cx+w,Y=cy+w;
+      wallY(cx-w*.35,cx+w*.35,Y,z+.04,z+.42,mix("#2f2a2a","#ffcf7d",night*.8));
+      wallX(X,cy-w*.35,cy+w*.35,z+.04,z+.42,mix("#2a2424","#ffcf7d",night*.8));
+      if(night>.3)addLight(cx,Y,z+.25,.42,.5);
+      z+=.52;
+      const o=w+.26,rc=roofC(rf);
+      poly([cx-o,cy+o,z-.04,cx+o,cy+o,z-.04,cx+o*.42,cy+o*.42,z+.3,cx-o*.42,cy+o*.42,z+.3],dark(rc,.14));
+      poly([cx+o,cy-o,z-.04,cx+o,cy+o,z-.04,cx+o*.42,cy+o*.42,z+.3,cx+o*.42,cy-o*.42,z+.3],dark(rc,.3));
+      top(cx-o*.42,cy-o*.42,z+.3,o*.84,o*.84,dark(rc,.05));
+      // zdvižené rohy
+      poly([cx-o-.05,cy+o+.05,z+.05,cx-o,cy+o,z-.05,cx-o+.14,cy+o,z-.03],"#d9b24a");
+      poly([cx+o+.05,cy+o+.05,z+.05,cx+o,cy+o,z-.05,cx+o-.14,cy+o,z-.03],"#d9b24a");
+      poly([cx+o+.05,cy-o-.05,z+.05,cx+o,cy-o,z-.05,cx+o,cy-o+.14,z-.03],"#d9b24a");
+      z+=.3;w*=.8;
+    }
+    // zlatý vrchol
+    c.strokeStyle="#d9b24a";c.lineWidth=2;c.beginPath();c.moveTo(px(cx,cy),py(cx,cy,z));c.lineTo(px(cx,cy),py(cx,cy,z+.72));c.stroke();
+    c.lineWidth=1;for(let i=1;i<5;i++){const zz=z+.12*i+.08;const X=px(cx,cy),Y=py(cx,cy,zz),rr=4.2-i*.5;c.beginPath();c.ellipse(X,Y,rr,rr*.45,0,0,6.3);c.stroke()}
+  });
+}
+function shrineDraw(){
+  const l=G.L.shrine,x=36.5,y=6.6,dx=2.8,dy=2.8,f=y+dy,grand=l>=3;
+  const wood=l>=3?"#c8412e":l===2?"#9a5a3a":"#8a4a33",gold=l>=4?"#e7bd4d":"#b48a44";
+  q(x+dx/2,y+dy/2,()=>{
+    // podstavec
+    const st=mix("#b7b0a4","#e3e5e5",snow*.5);
+    box(x-.22,y-.22,0,dx+.44,dy+.44,l>=2?.2:.22,st);
+    if(l>=2){box(x-.08,y-.08,.2,dx+.16,dy+.16,.14,dark(st,.06));box(x+.7,f+.22,0,1.4,.3,.1,st);box(x+.85,f+.08,.1,1.1,.2,.14,st)}
+    const z0=l>=2?.34:.22,h=grand?1:1.1;
+    box(x,y,z0,dx,dy,h,wood);
+    // dveře a sloupy
+    wallY(x+.8,x+2,f,z0,z0+h-.1,mix("#2f2a2a","#ffcf7d",night*.8));
+    if(night>.25)addLight(x+1.4,f,z0+.5,.9,.6);
+    if(l>=2){
+      for(const a of [x,x+.72,x+2,x+dx-.1])wallY(a,a+.1,f,z0,z0+h,dark(wood,.28));
+      wallY(x,x+dx,f,z0+h-.14,z0+h,dark(wood,.35));
+      box(x+1.05,f+.02,z0,.7,.28,.26,"#6b4a36");            // obětní skříňka
+      for(let a=x+1.1;a<x+1.72;a+=.1)top(a,f+.05,z0+.261,.05,.22,"#2e2622");
+    }else wallY(x+1.25,x+1.55,f,1,1.25,"#f4f4ee");
+    // střecha
+    if(grand){
+      roof(x,y,z0+h,dx,dy,.36,"#3c3f49",{along:"y",wall:wood,ov:.36});
+      const u=z0+h+.26,ix=x+.36,iy=y+.36,idx=dx-.72,idy=dy-.72;
+      box(ix,iy,u,idx,idy,.58,"#f4f0e4");
+      for(const a of [ix,ix+idx/2-.05,ix+idx-.1])wallY(a,a+.1,iy+idy,u,u+.58,wood);
+      wallX(ix+idx,iy,iy+idy,u,u+.1,dark(wood,.25));
+      wallY(ix,ix+idx,iy+idy,u+.48,u+.58,dark(wood,.2));
+      // plaketa s názvem
+      wallY(x+1.08,x+1.72,iy+idy,u+.08,u+.42,"#23252c");textY("木漏",x+1.4,iy+idy,u+.25,5.4,gold);
+      const rz=u+.58,rh=1.15;
+      roof(ix,iy,rz,idx,idy,rh,"#3c3f49",{along:"y",wall:"#f4f0e4",ov:.44});
+      // kříže chigi a polena katsuogi na hřebeni
+      const rx=ix+idx/2,fy=iy+idy+.44,by=iy-.44,top_=rz+rh;
+      c.strokeStyle=gold;c.lineWidth=2.4;c.beginPath();
+      c.moveTo(px(rx-.3,fy),py(rx-.3,fy,top_-.28));c.lineTo(px(rx+.28,fy),py(rx+.28,fy,top_+.42));
+      c.moveTo(px(rx+.3,fy),py(rx+.3,fy,top_-.28));c.lineTo(px(rx-.28,fy),py(rx-.28,fy,top_+.42));c.stroke();
+      for(let a=iy+.15;a<iy+idy-.1;a+=.46)box(rx-.2,a,top_-.02,.4,.13,.1,gold);
+      if(l>=4){
+        // zlaté lemy a papírové lucerny pod střechou
+        c.strokeStyle=gold;c.lineWidth=1.6;c.beginPath();
+        c.moveTo(px(ix-.44,fy),py(ix-.44,fy,rz));c.lineTo(px(rx,fy),py(rx,fy,top_));c.lineTo(px(ix+idx+.44,fy),py(ix+idx+.44,fy,rz));c.stroke();
+        for(const a of [x+.42,x+dx-.42]){
+          const X=px(a,f+.1),Y=py(a,f+.1,z0+h-.2);
+          c.fillStyle="#3a2f2a";c.fillRect(X-.5,Y-8,1,5);
+          c.fillStyle=mix("#d6432f","#ff9b5f",night);c.beginPath();c.ellipse(X,Y,4.4,5.6,0,0,6.3);c.fill();
+          c.fillStyle="#26201d";c.fillRect(X-2.6,Y-5.8,5.2,1.1);c.fillRect(X-2.6,Y+4.7,5.2,1.1);
+          addLight(a,f+.1,z0+h-.2,.6,.9);
+        }
+      }
+    }else{
+      roof(x,y,z0+h,dx,dy,l===2?1.25:1.15,l===2?"#343843":"#3c3f49",{along:"y",wall:wood,ov:.42});
+    }
+    // posvátné lano s papírovými střapci
+    if(l>=2){
+      const zr=z0+h-.2,xa=x+.72,xb=x+2.1,ym=f+.05;
+      c.strokeStyle="#d9c58a";c.lineWidth=3.2;c.lineCap="round";c.beginPath();
+      c.moveTo(px(xa,ym),py(xa,ym,zr));c.quadraticCurveTo(px(x+1.41,ym),py(x+1.41,ym,zr-.26),px(xb,ym),py(xb,ym,zr));c.stroke();c.lineCap="butt";
+      for(const t2 of [.2,.5,.8]){
+        const a=xa+(xb-xa)*t2,sag=(1-Math.pow(2*t2-1,2))*.13,X=px(a,ym),Y=py(a,ym,zr-sag);
+        c.fillStyle="#fbfaf2";c.beginPath();c.moveTo(X-1.6,Y);c.lineTo(X+1.6,Y);c.lineTo(X+.2,Y+3);c.lineTo(X+1.7,Y+3);c.lineTo(X+.2,Y+7);c.lineTo(X-1.2,Y+3.6);c.lineTo(X+.2,Y+3.6);c.closePath();c.fill();
+      }
+    }
+  });
+  // nádvoří
+  if(l>=2){stoneLantern(37.15,10.5,l>=3);stoneLantern(38.5,10.35,l>=3)}
+  if(l>=3){stoneLantern(38.65,11,true);tree(39.6,6.9,.72,1);if(l<4)tree(36.05,9.1,.72,1);torii(37.53,9.9,.74)}
+  if(l>=4){
+    pagoda(36.32,10.55);
+    for(const [X,flip] of [[37.15,1],[38.65,-1]])q(X,9.9,()=>{ // strážní lvíčci komainu
+      const st=mix("#a6a59c","#dfe2e2",snow*.5);
+      box(X-.14,9.76,0,.28,.28,.24,dark(st,.1));
+      const SX=px(X,9.9),SY=py(X,9.9,.24);
+      c.fillStyle=st;c.beginPath();c.ellipse(SX,SY-4,3.6,4.8,0,0,6.3);c.fill();
+      c.beginPath();c.arc(SX+flip*1.3,SY-9.4,3.2,0,6.3);c.fill();
+      c.fillStyle=dark(st,.45);c.fillRect(SX+flip*2.2-.7,SY-10.1,1.4,1);
+      c.fillStyle="#cf4a33";c.fillRect(SX-3,SY-6.8,6,1.2);
+    });
+  }
+  torii(37.25,11.4,1);
+}
+function onsenDraw(lv){
+  const x=2.5,y=23.6;
+  q(x+1.8,y+1.4,()=>{
+    box(x,y,0,3.8,2.7,1.2,"#d9c7a8");
+    for(let X=x+.3;X<x+3.5;X+=.9)winY(X,X+.6,y+2.7,.42,.98);
+    wallX(x+3.8,y+.8,y+1.9,0,.95,"#7a3f39");
+    roof(x,y,1.2,3.8,2.7,1,"#3d4a5c",{wall:"#d9c7a8"});
+    const X=px(x+1.9,y+2.7),Y=py(x+1.9,y+2.7,.2);
+    c.fillStyle="#cf4a33";c.font='800 13px "Shippori Mincho",serif';c.textAlign="center";c.textBaseline="middle";c.fillText("♨",X,Y-1);
+  });
+  if(lv>=2)q(7.6,25.3,()=>{
+    box(6.7,23.9,0,2.2,2.4,1.05,"#cdb99a");winY(7,7.5,26.3,.4,.85);winY(7.9,8.5,26.3,.4,.85);
+    roof(6.7,23.9,1.05,2.2,2.4,.8,"#3d4a5c",{along:"y",wall:"#cdb99a"});
+  });
+  if(lv>=3)q(5,27.1,()=>{
+    box(2.4,26.6,0,4.2,.95,.14,"#7d7a72");
+    top(2.6,26.72,.145,3.8,.7,mix("#8ec5cf","#ffd28a",night*.4));
+  });
+}
+function bikeDraw(){
+  q(30,9.8,()=>{
+    box(27.6,9.1,0,4.6,1.3,.05,"#a7a9a6");
+    for(let x=27.9;x<32;x+=.42){const X=px(x,9.75),Y=py(x,9.75,.05);c.strokeStyle=["#cf4a33","#2d6f9e","#22303f","#e0a93a"][Math.floor(x*2.4)%4];c.lineWidth=1.3;c.beginPath();c.moveTo(X-5,Y+2);c.lineTo(X+5,Y-2);c.moveTo(X-3,Y-7);c.lineTo(X,Y);c.stroke();c.strokeStyle="#333";c.lineWidth=.8;c.beginPath();c.arc(X-5,Y+1,2.6,0,6.3);c.arc(X+5,Y-3,2.6,0,6.3);c.stroke()}
+    [27.7,32.05].forEach(x=>box(x,9.2,0,.08,.08,1.35,"#59646f"));
+    box(27.5,9.05,1.35,4.8,1.4,.06,roofC("#7f8e99"));
+  },1);
+}
+const BUS_LEN=3.9,BUS_Y0=4.75,BUS_Y1=5.8,BUS_STOP=22.2,BUS_LINE=35.98;
+const bus={phase:"off",x:44,v:0,t:0,idle:7,did:false};
+let busCross=false;
+function drawBus(){
+  if(bus.phase==="off")return;
+  q(bus.x+BUS_LEN/2,5.3,()=>{
+    const B=bus.x,y0=BUS_Y0,y1=BUS_Y1,zb=.2,zs=1.6,zt=1.74,xe=B+BUS_LEN;
+    const white="#f3f4ef",band="#1f8a78",glass=mix("#2f4252","#ffe7a0",night*.85);
+    const CW=(l0,l1,z0,z1,f)=>{const p=Math.max(B+l0,0),r=Math.min(B+l1,MAPX);if(r>p)wallY(p,r,y1,z0,z1,f)};
+    const xa=Math.max(B,0),xb=Math.min(xe,MAPX);
+    if(xb<=xa)return;
+    const inMap=B>=0&&xe<=MAPX;
+    poly([xa,y1,.02,xb,y1,.02,xb,y1+.2,.01,xa,y1+.2,.01],"rgba(15,20,30,.24)");
+    top(xa,y0+.1,zt,xb-xa,y1-y0-.2,roofC("#e6e8e3"));
+    poly([xa,y1,zs,xb,y1,zs,xb,y1-.1,zt,xa,y1-.1,zt],roofC("#d8dbd6"));
+    CW(0,BUS_LEN,zb,zs,dark(white,.05));
+    CW(0,BUS_LEN,zb,.22,"#20242b");
+    CW(0,BUS_LEN,.26,.6,band);
+    if(inMap){
+      poly([B+2.6,y1,.6,xe,y1,.6,xe,y1,.86,B+3.2,y1,.86],band);
+      poly([xe,y1,.92,B+3.2,y1,.92,B+2.6,y1,.66,B,y1,.64,B,y1,.6,B+2.6,y1,.62,B+3.2,y1,.88,xe,y1,.88],"#e0a93a");
+    }
+    CW(.02,BUS_LEN-.08,.92,1.42,glass);
+    CW(0,.2,.58,1.5,glass);
+    for(let l=1.2;l<3.8;l+=.56)CW(l-.015,l+.015,.92,1.42,dark(white,.08));
+    const open=bus.phase==="dwell"&&bus.t>.5&&bus.t<6.5;
+    for(const [p,r] of [[.3,.8],[2,2.72]]){
+      CW(p-.03,r+.03,.22,1.44,dark(white,.3));
+      CW(p,r,.26,1.4,open?"#171b22":glass);
+      if(r-p>.6&&!open)CW((p+r)/2-.015,(p+r)/2+.015,.26,1.4,dark(white,.3));
+    }
+    CW(1,1.85,1.45,1.58,"#14171c");
+    if(inMap)textY("駅前",B+1.42,y1,1.515,5.2,"#ffa94d");
+    for(const l of [1.2,3.05]){
+      const X=B+l;if(X<.15||X>MAPX-.15)continue;
+      c.save();c.transform(1,.5,0,1,px(X,y1),py(X,y1,.17));
+      c.fillStyle="#23272e";c.beginPath();c.arc(0,0,5.6,Math.PI,0);c.lineTo(5.6,3.4);c.lineTo(-5.6,3.4);c.closePath();c.fill();
+      c.fillStyle="#14161a";c.beginPath();c.arc(0,0,4.3,0,6.3);c.fill();
+      c.fillStyle="#aeb3b7";c.beginPath();c.arc(0,0,1.9,0,6.3);c.fill();c.restore();
+    }
+    if(inMap){
+      box(B-.14,y1-.02,1.28,.1,.05,.24,"#20242b");
+      box(B+1.3,y0+.27,zt,1.55,.51,.13,roofC("#cfd3cf"));
+      box(B+3.1,y0+.38,zt,.34,.29,.07,roofC("#bcc1be"));
+    }
+    if(xe<=MAPX){
+      wallX(xe,y0,y1,zb,zs,dark(white,.24));
+      wallX(xe,y0,y1,zb,.26,"#1b1e24");
+      poly([xe,y0,zs,xe,y1,zs,xe,y1-.1,zt,xe,y0+.1,zt],roofC("#b7bab5"));
+      wallX(xe,y0,y1,.3,.72,dark(band,.22));
+      wallX(xe,y0+.13,y1-.13,.86,1.36,glass);
+      wallX(xe,y0+.3,y1-.3,1.42,1.56,"#14171c");
+      textX("12",xe,(y0+y1)/2,1.49,4.4,"#ffa94d");
+      for(let z=.36;z<.68;z+=.08)wallX(xe,y0+.24,y1-.24,z,z+.03,dark(band,.48));
+      const brake=bus.v<1&&bus.phase!=="off";
+      for(const [p,r] of [[y0+.03,y0+.13],[y1-.13,y1-.03]])wallX(xe,p,r,.46,.84,brake?"#f0473a":"#c33a31");
+      wallX(xe,(y0+y1)/2-.11,(y0+y1)/2+.11,.26,.36,"#22573f");
+      wallX(xe,(y0+y1)/2-.07,(y0+y1)/2+.07,.3,.32,"#f5f6f2");
+    }
+    if(night>.25){addLight(B+1.2,y1,1.15,1.2,.32);addLight(B+2.8,y1,1.15,1.2,.32);addLight(B-.2,5.3,.4,1,.6)}
+  });
+}
+/* Kočičí kavárna: dům s kočičí tváří ve štítu a kočky před vchodem */
+const CAFE={x:18.2,y:.9,dx:2.2,dy:2.5};
+const CAFE_COLS=[["#e8913c","#f6d6a8"],["#2c2c33","#2c2c33"],["#f5f3ea","#e8913c"],["#8d939c","#c9ced4"],["#7a5a3f","#efe2c8"]];
+let cafeCats=[];
+function cafeReady(){
+  if(cafeCats.length)return;
+  for(let i=0;i<5;i++)cafeCats.push({x:17.8+Math.random()*3.1,y:3.5+Math.random()*.4,c:CAFE_COLS[i],tx:0,ty:0,walk:false,wait:Math.random()*5,ph:Math.random()*6,flip:Math.random()<.5});
+}
+function updateCafeCats(dt){
+  if(!G.L.cafe)return;
+  cafeReady();
+  for(const k of cafeCats){
+    k.ph+=dt;
+    if(k.walk){
+      const dx=k.tx-k.x,dy=k.ty-k.y,d=Math.hypot(dx,dy),st=.55*dt;
+      if(d<=st){k.x=k.tx;k.y=k.ty;k.walk=false;k.wait=3+Math.random()*9}
+      else{k.x+=dx/d*st;k.y+=dy/d*st;k.flip=dx-dy<0}
+    }else{
+      k.wait-=dt;
+      if(k.wait<=0){k.tx=17.8+Math.random()*3.1;k.ty=3.5+Math.random()*.4;k.walk=true}
+    }
+  }
+}
+function littleCat(X,Y,k,sit,t){
+  // X,Y: místo na zemi; sit = sedí, jinak jde
+  const col=k.c[0],acc=k.c[1],dir=k.flip?-1:1;
+  c.fillStyle="rgba(15,20,30,.2)";c.beginPath();c.ellipse(X,Y,5.2,1.8,0,0,6.3);c.fill();
+  c.strokeStyle=col;c.lineWidth=1.5;c.lineCap="round";
+  const wag=Math.sin(t*2.2+k.ph)*1.8;
+  c.beginPath();c.moveTo(X-dir*3.6,Y-2.6);c.quadraticCurveTo(X-dir*7,Y-3,X-dir*(6.4+wag*.3),Y-7-wag*.5);c.stroke();c.lineCap="butt";
+  c.fillStyle=col;
+  if(sit){
+    c.beginPath();c.ellipse(X,Y-3.1,3.6,3.3,0,0,6.3);c.fill();
+    c.fillStyle=acc;c.beginPath();c.ellipse(X+dir*1,Y-2.4,1.7,1.9,0,0,6.3);c.fill();
+    c.fillStyle=col;var hx=X+dir*1.5,hy=Y-7.2;
+  }else{
+    const st=Math.sin(t*8+k.ph)*.9;
+    c.fillRect(X-dir*3-.6,Y-2.2,1.2,2.2+st*.3);c.fillRect(X+dir*2.5-.6,Y-2.2,1.2,2.2-st*.3);
+    c.beginPath();c.ellipse(X,Y-3.3,4.3,2.2,0,0,6.3);c.fill();
+    var hx=X+dir*3.6,hy=Y-5.6;
+  }
+  c.beginPath();c.arc(hx,hy,2.6,0,6.3);c.fill();
+  c.beginPath();c.moveTo(hx-2.6,hy-.8);c.lineTo(hx-2.1,hy-4);c.lineTo(hx-.3,hy-2.2);c.lineTo(hx+.3,hy-2.2);c.lineTo(hx+2.1,hy-4);c.lineTo(hx+2.6,hy-.8);c.closePath();c.fill();
+  c.fillStyle=col==="#2c2c33"?"#f2d36b":"#1c2a3f";c.fillRect(hx-1.3,hy-.5,.8,.9);c.fillRect(hx+.6,hy-.5,.8,.9);
+}
+function drawCafe(t){
+  const {x,y,dx,dy}=CAFE,f=y+dy,wall="#bfe3d4",trim="#fbfaf2",h=2.5;
+  q(x+dx/2,y+dy/2,()=>{
+    box(x,y,0,dx,dy,h,wall);
+    box(x-.04,y-.04,0,dx+.08,dy+.08,.14,dark(wall,.4));
+    // patro: dvě okna s kočkami na parapetu
+    const warm=mix("#8fb4c6","#ffdf96",Math.max(night,.25));
+    for(const a of [x+.22,x+1.3]){wallY(a,a+.68,f,1.5,2.15,warm);wallY(a-.04,a+.72,f,1.45,1.5,trim)}
+    // přízemí: výloha a dveře
+    wallY(x+.14,x+1.42,f,.28,1.06,warm);
+    wallY(x+.1,x+1.46,f,.22,.28,trim);
+    wallY(x+1.56,x+2.04,f,.14,1.1,"#6b4a36");
+    wallY(x+1.66,x+1.94,f,.6,1,warm);
+    for(const [k,a] of [[0,.42],[3,.86],[2,1.2]]){ // kočky ve výloze
+      const X=px(x+a,f),Y=py(x+a,f,.3);
+      c.save();c.transform(1,.5,0,1,X,Y);littleCat(0,0,{c:CAFE_COLS[k],flip:k===3,ph:k},true,t);c.restore();
+    }
+    for(const [k,a] of [[1,.55],[4,1.65]]){
+      const X=px(x+a,f),Y=py(x+a,f,1.5);
+      c.save();c.transform(1,.5,0,1,X,Y);littleCat(0,0,{c:CAFE_COLS[k],flip:k===4,ph:k},true,t);c.restore();
+    }
+    if(night>.25){addLight(x+.8,f,.7,.8,.65);addLight(x+.55,f,1.8,.45,.5);addLight(x+1.65,f,1.8,.45,.5)}
+    // pruhovaná markýza a nápis
+    const aw=7;for(let i=0;i<aw;i++){const a=x+i*dx/aw,b=a+dx/aw;
+      poly([a,f,1.28,b,f,1.28,b,f+.5,1.04,a,f+.5,1.04],i%2?"#fbfaf2":"#e8778f")}
+    poly([x+dx,f,1.28,x+dx,f+.5,1.04,x+dx,f,1.04],"#b95a70");
+    wallY(x+.28,x+1.92,f,2.2,2.46,trim);
+    textY("猫カフェ",x+1.1,f,2.33,9.5,"#c24a60");
+    // střecha se štítem ve tvaru kočičí tváře
+    roof(x,y,h,dx,dy,1,"#5a5f78",{along:"y",wall,ov:.2});
+    const rc=roofC("#5a5f78");
+    poly([x-.02,f+.2,h+.1,x+.34,f+.2,h+.1,x+.1,f+.2,h+1],rc);
+    poly([x+dx+.02,f+.2,h+.1,x+dx-.34,f+.2,h+.1,x+dx-.1,f+.2,h+1],rc);
+    poly([x+.05,f+.21,h+.17,x+.28,f+.21,h+.17,x+.12,f+.21,h+.72],"#e8778f");
+    poly([x+dx-.05,f+.21,h+.17,x+dx-.28,f+.21,h+.17,x+dx-.12,f+.21,h+.72],"#e8778f");
+    c.save();c.transform(1,.5,0,1,px(x+dx/2,f),py(x+dx/2,f,h+.42));
+    const ey=night>.5?"#ffd868":"#1c2a3f";c.fillStyle=ey;
+    const bl=Math.sin(t*.7)>.985?.4:2.6;
+    c.beginPath();c.ellipse(-8,-2,1.9,bl,0,0,6.3);c.ellipse(8,-2,1.9,bl,0,0,6.3);c.fill();
+    c.fillStyle="#e8778f";c.beginPath();c.moveTo(-1.6,1.6);c.lineTo(1.6,1.6);c.lineTo(0,3.2);c.closePath();c.fill();
+    c.strokeStyle="#1c2a3f";c.lineWidth=.8;c.beginPath();
+    for(const s2 of [-1,1]){c.moveTo(s2*5,2.4);c.lineTo(s2*14,1);c.moveTo(s2*5,3.4);c.lineTo(s2*14,4.4)}
+    c.moveTo(0,3.2);c.quadraticCurveTo(-1.6,5.2,-3.2,3.8);c.moveTo(0,3.2);c.quadraticCurveTo(1.6,5.2,3.2,3.8);c.stroke();c.restore();
+    // kočka vyhřívající se na hřebeni
+    const rk=px(x+dx/2,y+.75),ry=py(x+dx/2,y+.75,h+1);
+    littleCat(rk,ry+1,{c:CAFE_COLS[0],flip:false,ph:9},true,t);
+  });
+  // lavička a květináče před vchodem
+  bench(x+.2,3.48,0);
+  flower(x+dx+.02,3.42,0);
+  for(const k of cafeCats)q(k.x,k.y,()=>littleCat(px(k.x,k.y),py(k.x,k.y),k,!k.walk,t),1);
+}
+function meow(){
+  if(!AC||!soundOn)return;
+  const o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;
+  o.type="triangle";o.frequency.setValueAtTime(620,n);o.frequency.linearRampToValueAtTime(880,n+.14);o.frequency.linearRampToValueAtTime(520,n+.42);
+  g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(.05,n+.05);g.gain.exponentialRampToValueAtTime(.0001,n+.48);
+  o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+.5);
+}
+/* ─────────────── SEZÓNNÍ UDÁLOSTI ─────────────── */
+function sitter(X,Y,col,hair){
+  c.fillStyle="#2a3140";c.beginPath();c.ellipse(X+1.8,Y-.8,3.2,1.3,0,0,6.3);c.fill();
+  c.fillStyle=col;c.beginPath();c.roundRect(X-2.4,Y-8,4.8,7.4,2);c.fill();
+  c.fillStyle="#efc9a6";c.beginPath();c.arc(X,Y-10,2.4,0,6.3);c.fill();
+  c.fillStyle=hair;c.beginPath();c.arc(X,Y-10.7,2.4,Math.PI,0);c.fill();
+}
+function blanket(x,y,n){
+  q(x+.7,y+.4,()=>{
+    top(x,y,.012,1.45,.85,"#3f7fc4");
+    c.strokeStyle="#7cabdc";c.lineWidth=.6;c.beginPath();
+    for(let a=.36;a<1.4;a+=.36){c.moveTo(px(x+a,y),py(x+a,y,.012));c.lineTo(px(x+a,y+.85),py(x+a,y+.85,.012))}
+    c.stroke();
+    box(x+.6,y+.3,.012,.34,.24,.1,"#b8402f");top(x+.6,y+.3,.114,.34,.24,"#e8d9b5");
+    const C=["#b84a3a","#27364d","#e8e4d8","#5a7d5a","#7c5a86"],H=["#242428","#5a4230","#242428"];
+    [[.28,.25],[1.15,.28],[.32,.66],[1.12,.66]].slice(0,n).forEach((p,i)=>sitter(px(x+p[0],y+p[1]),py(x+p[0],y+p[1],.012),C[(n+i)%5],H[i%3]));
+  },.2);
+}
+function bonbori(x,y,col){
+  q(x,y,()=>{
+    box(x-.03,y-.03,0,.06,.06,1.05,"#4a3a30");
+    const X=px(x,y),Y=py(x,y,1.2);
+    c.fillStyle=mix(col,"#fff0c4",night*.6);c.beginPath();c.roundRect(X-3.2,Y-5,6.4,9,3);c.fill();
+    c.fillStyle="#2e2622";c.fillRect(X-3.2,Y-6,6.4,1.2);
+    if(night>.1)addLight(x,y,1.2,.55,.85);
+  },.1);
+}
+function yatai(x,y,col,k){
+  q(x+.7,y+.45,()=>{
+    box(x,y,0,1.4,.72,.62,"#a07a52");
+    wallY(x+.05,x+1.35,y+.72,.32,.58,mix("#3a2f28","#ffcf7d",night));
+    box(x+.04,y+.76,.46,1.32,.16,.05,"#d9c7a1");
+    for(const X of [x+.03,x+1.31])box(X,y+.72,0,.06,.06,1.25,"#6b4a36");
+    for(const X of [x+.03,x+1.31])box(X,y,0,.06,.06,1.42,"#6b4a36");
+    const n=7;for(let i=0;i<n;i++){const a=x-.08+i*1.56/n,b=a+1.56/n;
+      poly([a,y-.02,1.42,b,y-.02,1.42,b,y+1,1.2,a,y+1,1.2],i%2?"#fbfaf2":col)}
+    wallY(x+.28,x+1.12,y+.72,.95,1.17,"#fbfcfa");
+    textY(k,x+.7,y+.72,1.06,8,col);
+    const X=px(x+.7,y+.95),Y=py(x+.7,y+.95,.98);
+    c.fillStyle=mix("#d6432f","#ff9b5f",night);c.beginPath();c.ellipse(X,Y,3,3.7,0,0,6.3);c.fill();
+    if(night>.1)addLight(x+.7,y+.8,.8,.75,.9);
+  });
+}
+function snowLantern(x,y,z=0){
+  q(x,y,()=>{
+    const X=px(x,y),Y=py(x,y,z);
+    c.fillStyle="#f6f8fa";c.beginPath();c.ellipse(X,Y-2,4.2,3.6,0,0,6.3);c.fill();
+    c.beginPath();c.ellipse(X,Y-6,3,3,0,0,6.3);c.fill();
+    c.fillStyle="#ffc56a";c.beginPath();c.ellipse(X+.6,Y-3,1.5,1.9,0,0,6.3);c.fill();
+    addLight(x,y,z+.2,.42,night>.1?.9:0);
+  });
+}
+function kamakura(x,y){
+  q(x,y,()=>{
+    const X=px(x,y),Y=py(x,y);
+    c.fillStyle="rgba(40,60,90,.18)";c.beginPath();c.ellipse(X,Y,24,10,0,0,6.3);c.fill();
+    c.fillStyle="#f4f7f9";c.beginPath();c.ellipse(X,Y-3,21,23,0,Math.PI,0);c.ellipse(X,Y-3,21,9,0,0,Math.PI);c.fill();
+    c.fillStyle="#d9e2e8";c.beginPath();c.ellipse(X+4,Y-1,16,7,0,0,Math.PI);c.fill();
+    c.fillStyle=mix("#6f4a2c","#ffc56a",Math.max(night,.25));c.beginPath();c.ellipse(X-5,Y-5,7.5,9.5,0,Math.PI,0);c.ellipse(X-5,Y-5,7.5,3.4,0,0,Math.PI);c.fill();
+    addLight(x-.1,y+.1,.3,.8,night>.1?.9:0);
+  });
+}
+function snowman(x,y){
+  q(x,y,()=>{
+    const X=px(x,y),Y=py(x,y);
+    c.fillStyle="rgba(40,60,90,.18)";c.beginPath();c.ellipse(X,Y,7,3,0,0,6.3);c.fill();
+    c.fillStyle="#f8fafb";c.beginPath();c.arc(X,Y-5,6,0,6.3);c.arc(X,Y-13.5,4.2,0,6.3);c.fill();
+    c.fillStyle="#1c2a3f";c.fillRect(X-1.8,Y-15,1,1);c.fillRect(X+.8,Y-15,1,1);
+    c.fillStyle="#cf4a33";c.fillRect(X-4,Y-10.6,8,1.5);c.fillStyle="#2a2d33";c.beginPath();c.roundRect(X-3.2,Y-21,6.4,4.2,1);c.fill();
+  });
+}
+function eventScene(ev,t){
+  const L=G.L;
+  if(ev===0){
+    [[8.8,21.78,3],[13.2,21.8,4],[18,21.78,2],[22.5,21.8,4],[27.2,21.78,3]].forEach(b=>blanket(...b));
+    for(const X of [8,12.6,17.4,21.9,26.5,31])bonbori(X,21.95,"#f3b7c6");
+  }else if(ev===1){
+    yatai(20.2,8.1,"#cf4a33","飴");yatai(22,8.1,"#2d6f9e","氷");
+    yatai(23.8,8.1,"#d98a2a","焼");
+    q(23,7.9,()=>{ // šňůra luceren nad náměstím
+      const a=[19.9,7.9],b=[25.6,7.9],z=2.05;
+      c.strokeStyle="#3a2f2a";c.lineWidth=.8;c.beginPath();c.moveTo(px(a[0],a[1]),py(a[0],a[1],z));c.quadraticCurveTo(px(22.75,7.9),py(22.75,7.9,z-.42),px(b[0],b[1]),py(b[0],b[1],z));c.stroke();
+      for(let i=1;i<9;i++){const u=i/9,x=a[0]+(b[0]-a[0])*u,sag=4*u*(1-u)*.21,X=px(x,7.9),Y=py(x,7.9,z-sag)+4;
+        c.fillStyle=i%2?mix("#d6432f","#ff9b5f",night):mix("#f0e4c8","#ffe9a8",night);c.beginPath();c.ellipse(X,Y,2.6,3.2,0,0,6.3);c.fill();
+        if(night>.2)addLight(x,7.9,z-sag-.15,.32,.85)}
+    },.5);
+    for(const X of [19.9,25.6])q(X,7.9,()=>box(X-.03,7.87,0,.06,.06,2.05,"#6b4a36"));
+    if(L.shrine)for(const [X,Y] of [[37.1,10.1],[38.75,10.1],[37.1,11.1],[38.75,11.1]])bonbori(X,Y,"#d6432f");
+  }else if(ev===2){
+    // výprava turistů s průvodcem
+    const spots=[[24.2,9.5],[24.8,9.9],[25.3,9.45],[25.9,9.85],[26.3,9.4],[24.6,10.35],[25.5,10.3]];
+    q(25,9.8,()=>{
+      const gx=px(23.5,9.85),gy=py(23.5,9.85);
+      c.strokeStyle="#4a4a4a";c.lineWidth=1;c.beginPath();c.moveTo(gx+3,gy-8);c.lineTo(gx+3,gy-27);c.stroke();
+      c.fillStyle="#e6c04c";c.beginPath();c.moveTo(gx+3,gy-27);c.lineTo(gx+12,gy-24);c.lineTo(gx+3,gy-21);c.closePath();c.fill();
+    });
+    const C=["#c7452f","#e6c04c","#3f8c6e","#e8e4d8","#2f4a70","#7c5a86","#d98a3a"];
+    [[23.5,9.85,"#22303f"],...spots.map((p,i)=>[p[0],p[1],C[i]])].forEach((p,i)=>q(p[0],p[1],()=>{
+      const X=px(p[0],p[1]),Y=py(p[0],p[1]);
+      c.fillStyle="rgba(15,20,30,.2)";c.beginPath();c.ellipse(X,Y,3.6,1.8,0,0,6.3);c.fill();
+      c.strokeStyle="#20242c";c.lineWidth=1.5;c.beginPath();c.moveTo(X-1,Y-5);c.lineTo(X-1,Y);c.moveTo(X+1,Y-5);c.lineTo(X+1,Y);c.stroke();
+      c.fillStyle=p[2];c.beginPath();c.roundRect(X-2.7,Y-12,5.4,7.6,2);c.fill();
+      c.fillStyle="#efc9a6";c.beginPath();c.arc(X,Y-14,2.5,0,6.3);c.fill();
+      c.fillStyle=i%3===1?"#e8e4d8":"#242428";c.beginPath();c.arc(X,Y-14.7,2.5,Math.PI,0);c.fill();
+      if(i&&i%2){ // fotoaparát a občasný blesk
+        c.fillStyle="#1c1f26";c.fillRect(X+1.8,Y-14.8,3.2,2.2);
+        if((t*.6+i*.37)%1<.05){c.fillStyle="#ffffff";c.beginPath();c.arc(X+4.8,Y-14,3.4,0,6.3);c.fill()}
+      }
+    }));
+  }else{
+    for(let x=19.8;x<26.8;x+=1.15)snowLantern(x,10.85);
+    for(let x=9;x<29;x+=2.5)snowLantern(x,11.35,.5);
+    kamakura(26.5,8.4);snowman(25.1,8.6);snowman(21,9.3);
+    if(L.shrine)for(const [X,Y] of [[36.4,10.1],[37.15,9.95],[38.65,9.95],[39.4,10.1],[37.1,11.3],[38.7,11.3]])snowLantern(X,Y);
+  }
+}
+/* Ohňostroj: jen během letního matsuri, od soumraku */
+let fw=[],fwIn=1;
+const FW_COL=["#ff6a5c","#ffd86a","#7fd4ff","#ff9ad1","#a5f07f","#ffffff"];
+function updateFireworks(dt){
+  if(eventNow===1&&(night>.25)){
+    fwIn-=dt;
+    if(fwIn<=0&&fw.length<9){
+      fwIn=reduced?7:.55+Math.random()*1.3;
+      const x=-620+Math.random()*1240,top_=Math.abs(x)*.42-95-Math.random()*65;
+      fw.push({x,y:top_+250,ty:top_,t:0,boom:false,col:FW_COL[Math.floor(Math.random()*FW_COL.length)],col2:FW_COL[Math.floor(Math.random()*FW_COL.length)],sp:[]});
+    }
+  }
+  for(const f of fw){
+    f.t+=dt;
+    if(!f.boom){
+      f.y+=(f.ty-f.y)*Math.min(1,dt*3.2);
+      if(Math.abs(f.y-f.ty)<14){
+        f.boom=true;f.t=0;note(70,0,.9,.07);note(120,.03,.5,.03);
+        const n=reduced?24:64,R=62+Math.random()*62;
+        for(let i=0;i<n;i++){const a=i/n*6.283+Math.random()*.1,r=R*(.55+Math.random()*.45);f.sp.push({a,r,c:i%3?f.col:f.col2})}
+      }
+    }
+  }
+  fw=fw.filter(f=>!f.boom||f.t<2.1);
+}
+function drawFireworks(){
+  if(!fw.length)return;
+  c.globalCompositeOperation="lighter";
+  for(const f of fw){
+    if(!f.boom){c.globalAlpha=.9;c.fillStyle="#ffe7a8";c.beginPath();c.arc(f.x,f.y,1.8,0,6.3);c.arc(f.x,f.y+7,1,0,6.3);c.fill();continue}
+    const p=Math.min(1,f.t/.75),e=1-Math.pow(1-p,3),fade=Math.max(0,1-f.t/2.1);
+    for(const s2 of f.sp){
+      const X=f.x+Math.cos(s2.a)*s2.r*e,Y=f.y+Math.sin(s2.a)*s2.r*e+f.t*f.t*14;
+      c.globalAlpha=fade;c.fillStyle=s2.c;c.beginPath();c.arc(X,Y,2.4*(.45+fade*.75),0,6.3);c.fill();
+    }
+  }
+  c.globalAlpha=1;c.globalCompositeOperation="source-over";
+}
+function busStopDraw(){
+  q(23.5,6.5,()=>{
+    box(22.6,6.2,0,.07,.07,1.3,"#59646f");box(24.5,6.2,0,.07,.07,1.3,"#59646f");
+    wallY(22.67,24.5,6.22,.35,1.15,"rgba(190,215,225,.32)");
+    box(22.9,6.4,.28,1.3,.2,.05,"#a6784f");
+    box(22.4,6.08,1.3,2.35,.72,.06,roofC("#5e6d79"));
+  });
+  q(22.1,5.98,()=>{
+    box(22.05,5.95,0,.05,.05,1.5,"#3b4656");
+    wallY(21.93,22.22,6,1.28,1.58,"#1f8a78");
+    textY("バス",22.075,6,1.43,3.8,"#ffffff");
+  });
+}
+function busFree(){
+  return autos.every(a=>{
+    const d=a.dir>0?3.85-a.y:a.y-7.6;
+    if(d<0)return a.dir>0?a.y>=6.7:a.y<=3.85;
+    return !(d<.9&&a.v>1);
+  });
+}
+function updateBus(dt){
+  if(!G.L.bus)return;
+  if(bus.phase==="off"){
+    bus.idle-=dt;
+    if(bus.idle<=0){
+      bus.phase="come";bus.x=40.5;bus.v=2.8;bus.t=0;bus.did=false;busCross=false;
+      // lidé jdou z nádraží počkat na zastávku
+      const m=2+Math.floor(Math.random()*3);
+      for(let i=0;i<m&&people.length<MAXP;i++){
+        const p=newPerson(19.15,9.5,0);p.plat="BUS";
+        p.path=[{x:19.75,y:9.4,z:0},{x:19.85,y:8,z:0},{x:22.9+Math.random()*1.5,y:6.12+Math.random()*.18,z:0}];
+        people.push(p);
+      }
+    }
+    return;
+  }
+  let target=2.8;
+  if(bus.phase==="come"){
+    if(!busCross&&bus.x>BUS_LINE-.02&&bus.x<37&&busFree()&&!zebraBusy.E)busCross=true;
+    if(!busCross&&bus.x>=BUS_LINE)target=Math.min(2.8,(bus.x-BUS_LINE)*2.2);
+    if(busCross&&bus.x+BUS_LEN<32.9)busCross=false;
+    if(zebraBusy.W&&bus.x>=32.97)target=Math.min(target,(bus.x-32.97)*2.2);
+    if(bus.x<30)target=Math.min(target,(bus.x-BUS_STOP)*1.1+.25);
+    if(bus.x<=BUS_STOP+.02){bus.phase="dwell";bus.t=0;bus.x=BUS_STOP;bus.v=0}
+  }else if(bus.phase==="dwell"){
+    bus.t+=dt;target=0;
+    if(bus.t>.6&&!bus.did){
+      bus.did=true;
+      const r=rates(G.L),n=Math.round(4+r.demand*3),gain=n*Math.round(r.fare*.5);
+      G.money+=gain;G.total+=gain;G.pax+=n;G.waiting+=n*.5;
+      floats.push({x:BUS_STOP+1.8,y:5.8,z:2.4,txt:"Autobus +"+yen(gain),life:2.6,big:true});
+      doorSound();
+      const vis=Math.min(n,7);
+      const opts=["A"];if(r.tracks>=2)opts.push("I");if(r.tracks>=4)opts.push("C");
+      for(let i=0;i<vis&&people.length<MAXP;i++){
+        const plat=opts[Math.floor(Math.random()*opts.length)],p=newPerson(BUS_STOP+(i%2?2.36:.55),5.88,0);
+        p.delay=.2+i*.32;p.plat=plat;
+        p.path=[{x:20.5+Math.random()*1.3,y:6.6+Math.random()*.6,z:0},{x:19.85,y:8,z:0},{x:19.75,y:9.4,z:0},{x:19.15,y:9.5,z:0,hide:3},{...DOOR},...pathToPlat(plat)];
+        people.push(p);
+      }
+      people.filter(p=>p.plat==="BUS").forEach((p,i)=>{
+        p.state="walk";p.board=true;p.delay=.9+i*.35;p.i=0;p.path=[{x:BUS_STOP+.55,y:5.88,z:0}];
+      });
+    }
+    if(bus.t>7){bus.phase="leave";bus.t=0}
+  }else{
+    target=3;
+    if(bus.x<-BUS_LEN-.5){bus.phase="off";bus.idle=24+Math.random()*16;bus.x=44;return}
+  }
+  // cyklistům před sebou dá přednost
+  // (křížící cyklisté čekají oni; pojistka: autobus nikdy nečeká déle než pár sekund)
+  if(riders.some(r=>r.dx<-.5&&r.x<bus.x&&r.x>bus.x-1.3&&r.y>4.55&&r.y<5.95)&&(bus.yieldT||0)<5){target=0;bus.yieldT=(bus.yieldT||0)+dt}
+  else bus.yieldT=Math.max(0,(bus.yieldT||0)-dt*.5);
+  bus.v+=(target-bus.v)*Math.min(1,dt*(target<bus.v?5:1.2));
+  let nx=bus.x-bus.v*dt;
+  if(bus.phase==="come"&&!busCross&&bus.x>=BUS_LINE)nx=Math.max(nx,BUS_LINE);
+  if(bus.phase==="come")nx=Math.max(nx,BUS_STOP);
+  if(bus.phase==="come"&&zebraBusy.W&&bus.x>=32.97)nx=Math.max(nx,32.97);
+  bus.x=nx;
+}
+
+function scene(t){
+  const L=G.L;
+  if(eventNow>=0)eventScene(eventNow,t);
+  if(L.cafe){cafeReady();drawCafe(t)}
+  houses:{
+    HOUSE_INIT.forEach((p,i)=>house(p[0],p[1],i));
+    for(let i=0;i<L.houses;i++)house(HOUSE_SPOTS[i][0],HOUSE_SPOTS[i][1],i+3);
+  }
+  for(let i=0;i<L.shops;i++)shop(i);
+  TREES.forEach((t,i)=>{if(!(L.shrine>=4&&t[0]===36.1&&t[1]===11.6)&&!(L.shrine>=3&&t[0]===39.4&&t[1]===11.6))tree(t[0],t[1],.85+((i*7)%5)*.08)});
+  for(let i=0;i<L.trees;i++)for(const dx of [0,2.5]){tree(2+i*5.3+dx,22.5,.82,1)}
+  station();
+  for(const X of [2,8,14,20,26.4,31.8,37.6])streetLamp(X,6.2,-1);
+  for(const X of [5,11,16.9,25.45,30.45,37])streetLamp(X,3.98,1);
+  lamp(10.4,11.25,0);
+  // platformy
+  platform("A",false,true);
+  const n=1+L.tracks;
+  if(n>=2)platform("I",true,n>=3);
+  if(n>=4)platform("C",true,false);
+  [8.6,20.2,26].forEach(x=>{lamp(x,11.4,.5)});
+  if(n>=2)[13,21,27].forEach(x=>lamp(x,16.25,.5));
+  canopy("A",L.canopy);if(n>=2)canopy("I",L.canopy);if(n>=4)canopy("C",L.canopy);
+  if(n>=2){
+    const endY=n>=4?20.75:16.25;
+    bridge(endY);
+    stairs(11.75,8.6,10.9,.5,2.6);stairs(16.25,8.6,10.9,.5,2.6);
+    if(n>=4)stairs(20.75,8.6,10.9,.5,2.6);
+  }
+  // vybavení peronu
+  if(L.decor>=1){bench(18,11.25,.5);bench(23,11.25,.5);flower(20,6.9,0);flower(25.5,6.9,0);flower(19.3,10.6,0)}
+  if(L.decor>=2){bench(12,11.25,.5);flower(11,11.25,.5);flower(17,11.25,.5);bench(21.5,6.8,0);if(n>=2)bench(18,16.1,.5)}
+  if(L.decor>=3){for(let x=20;x<27;x+=1.4)flower(x,10.5,0);if(n>=2){flower(15,16,.5);bench(24,16.1,.5)}}
+  for(let i=0;i<L.machine;i++)q(19.5,7.2,()=>{const y=6.95+i*.5-(i?.0:0);box(19.15,y,0,.38,.42,.95,"#dfe5e6");wallX(19.53,y+.07,y+.35,.5,.82,mix("#3e6f8c","#c7eaff",night))});
+  const VC=["#cf4a33","#2d6f9e","#e8e6df","#3f8c5a"];
+  for(let i=0;i<L.vending;i++)vending(11.2+i*.55,11.1,.5,VC[i]);
+  if(L.kiosk>=1)q(22.2,11.6,()=>{
+    box(21.5,11.15,.5,1.5,.8,.95,"#3f8c78");wallY(21.62,22.88,11.95,.85,1.32,mix("#fbf6e6","#ffe89a",night));
+    box(21.42,11.15,1.45,1.66,1,.06,"#cf4a33");
+    if(night>.3)addLight(22.2,11.95,1.1,.6,.55);
+  });
+  if(L.kiosk>=2&&n>=2)q(21,16.1,()=>{
+    box(20.3,15.85,.5,1.5,.75,.95,"#3f8c78");wallY(20.42,21.68,16.6,.85,1.32,mix("#fbf6e6","#ffe89a",night));box(20.22,15.85,1.45,1.66,.95,.06,"#cf4a33");
+  });
+  if(L.bike)bikeDraw();
+  if(L.bus)busStopDraw();
+  if(L.shrine)shrineDraw();
+  if(L.onsen)onsenDraw(L.onsen);
+  // trolej
+  if(L.elec){
+    for(let x=2;x<40;x+=6.2){
+      if(x>32.4&&x<35.6)continue;
+      q(x,12.6,()=>{box(x-.05,12.55,0,.1,.1,2.5,"#6d7782");const last=TRACKY[n-1]+.4;
+      poly([x,12.6,2.4,x,last,2.4,x,last,2.33,x,12.6,2.33],"#59636e")},800);
+    }
+    for(let t=0;t<n;t++){const Y=TRACKY[t];q(20,Y,()=>{c.strokeStyle="rgba(40,48,60,.65)";c.lineWidth=.8;c.beginPath();c.moveTo(px(0,Y),py(0,Y,2.28));c.lineTo(px(MAPX,Y),py(MAPX,Y,2.28));c.stroke()},900)}
+  }
+  gates(n);
+}
+
+/* ─────────────── PŘEJEZD ─────────────── */
+let gateClosed=0,gateTarget=0,gateAcc=0,gateBlink=0;
+function gates(n){
+  const last=TRACKY[n-1]+.95;
+  const a=gateClosed*Math.PI/2; // 0 = zvednuto, 1 = dolů
+  const drawGate=(x,y,dir)=>{
+    q(x,y,()=>{
+      box(x-.05,y-.05,0,.1,.1,1.25,"#e9e6dc");
+      for(let i=0;i<3;i++)box(x-.052,y-.052,.15+i*.34,.104,.104,.14,"#23262c");
+      const on=gateTarget&&(gateBlink%1<.5);
+      addOnGateLight(x,y,on);
+      const len=1.75,zb=.95,ex=x+dir*Math.sin(a)*len,ez=zb+Math.cos(a)*len;
+      c.strokeStyle="#f0c93a";c.lineWidth=2.6;c.setLineDash([6,5]);c.beginPath();c.moveTo(px(x,y),py(x,y,zb));c.lineTo(px(ex,y),py(ex,y,ez));c.stroke();
+      c.strokeStyle="#23262c";c.lineDashOffset=6;c.beginPath();c.moveTo(px(x,y),py(x,y,zb));c.lineTo(px(ex,y),py(ex,y,ez));c.stroke();c.setLineDash([]);c.lineDashOffset=0;
+    },2);
+  };
+  drawGate(35,12.1,-1);drawGate(33,last+.05,1);
+}
+function addOnGateLight(x,y,on){
+  const X=px(x,y),Y=py(x,y,1.3);
+  c.fillStyle=on?"#ff4a35":"#5d2a26";c.beginPath();c.arc(X-3,Y,2,0,6.3);c.fill();
+  c.fillStyle=(gateTarget&&!on)?"#ff4a35":"#5d2a26";c.beginPath();c.arc(X+3,Y,2,0,6.3);c.fill();
+  if(gateTarget)addLight(x,y,1.3,.45,.8);
+}
+
+/* ─────────────── VLAKY ─────────────── */
+const CAR=3.8,GAP=.1,STOPX=17;
+const trains=[0,1,2,3].map(i=>({i,y:TRACKY[i],phase:"wait",t:0,wait:i===0?2.5:6+i*5.5,x:-30,dir:i%2?-1:1,from:0,to:0}));
+const TA=7,TD=9,TG=7;
+function trainLen(){return (1+G.L.cars)*(CAR+GAP)}
+const ease=t=>1-(1-t)*(1-t), easeIn=t=>t*t;
+let railT=0,kazeIn=200+Math.random()*100,hoshiIn=240+Math.random()*120;
+function updateTrains(dt){
+  const r=rates(G.L);
+  railT+=dt;kazeIn-=dt;if(G.L.express)hoshiIn-=dt;
+  for(const t of trains){
+    if(t.i>=r.tracks)continue;
+    t.t+=dt;
+    // rychlík přijíždí čelem k divákovi, aby byl vidět nos
+    if(t.phase==="wait")t.dir=G.L.express&&t.i===3?1:(t.i%2?-1:1);
+    if(t.phase==="wait"){
+      if(t.t>=t.wait){t.phase="in";t.t=0;t.len=trainLen();
+        t.sp=null;
+        const fast=G.L.express&&t.i===3;
+        if(fast&&hoshiIn<=0){t.sp="hoshi";hoshiIn=300+Math.random()*240;toast("Vzácný noční vlak Hoshi staví na stanici. Cestující platí dvojnásobné jízdné.",5000);blip()}
+        else if(!fast&&kazeIn<=0){t.sp="kaze";kazeIn=240+Math.random()*180;toast("Vzácný rychlík Kaze staví na stanici. Cestující platí dvojnásobné jízdné.",5000);blip()}
+t.from=t.dir>0?-t.len/2-1:MAPX+t.len/2+1;t.to=STOPX;}
+    }else if(t.phase==="in"){
+      t.x=t.from+(t.to-t.from)*ease(Math.min(1,t.t/TA));
+      if(t.t>=TA){t.phase="dwell";t.t=0;t.x=STOPX;arrive(t,r)}
+    }else if(t.phase==="dwell"){
+      if(t.t>=TD){t.phase="out";t.t=0;t.exit=t.dir>0?MAPX+t.len/2+1:-t.len/2-1;melody()}
+    }else if(t.phase==="out"){
+      t.x=STOPX+(t.exit-STOPX)*easeIn(Math.min(1,t.t/TG));
+      if(t.t>=TG){t.phase="wait";t.t=0;
+        // vlaky jezdí v taktu, aby se přejezd zavíral najednou a auta se dočkala
+        // koleje mají různé časy příjezdu, šinkansen jede jen každý třetí takt
+        const fast=G.L.express&&t.i===3,period=fast?r.interval*3:r.interval;
+        const slot=fast?9:[0,TA+TD+1,5,TA+TD+6][t.i];
+        t.wait=Math.max(.1,(((slot-railT)%period)+period)%period);}
+    }
+  }
+  gateTarget=trains.some(t=>{
+    if(t.i>=r.tracks)return false;
+    if(t.dir>0)return (t.phase==="dwell"&&t.t>TD-3.5)||(t.phase==="out"&&t.x-t.len/2<36);
+    return (t.phase==="wait"&&t.wait-t.t<5)||(t.phase==="in"&&t.x+t.len/2>32);
+  })?1:0;
+}
+function arrive(t,r){
+  const capT=r.cap*(G.L.express&&t.i===3?3:1); // šinkansen jede méně často, ale odveze víc lidí
+  const boarded=Math.min(Math.floor(G.waiting),capT);
+  const frac=G.waiting>0?boarded/G.waiting:0;
+  G.waiting-=boarded;
+  const alight=Math.round(capT*(.1+.3*Math.random())*Math.min(1,r.demand/Math.max(.1,r.capRate)+.2));
+  const gain=(boarded*(r.fare+r.spend)+alight*r.spend)*(t.sp?2:1);
+  G.money+=gain;G.total+=gain;G.pax+=boarded+alight;
+  if(gain>0)floats.push({x:STOPX,y:t.y,z:2.8,txt:(t.sp?(t.sp==="hoshi"?"Hoshi ":"Kaze ")+"+":"+")+yen(gain),life:3.4,big:true});
+  const plat=t.i===0?"A":t.i===3?"C":"I";
+  doorSound();
+  const edge=plat==="A"?12.35:plat==="C"?20.12:t.i===1?15.62:16.88;
+  // nástup
+  const here=people.filter(p=>p.plat===plat&&p.state==="wait");
+  const share=t.i===1||t.i===2?Math.ceil(here.length*Math.min(1,frac*1.4)/Math.max(1,r.tracks>=3?1.6:1)):Math.ceil(here.length*Math.min(1,frac*1.4));
+  here.sort(()=>Math.random()-.5).slice(0,share).forEach((p,i)=>{
+    p.state="walk";p.board=true;p.delay=i*.12;
+    p.path=[{x:doorX(t,p.x),y:edge,z:.5}];p.i=0;
+  });
+  // výstup
+  const vis=Math.min(Math.round(alight/Math.max(1,r.cap/14)),10,Math.max(0,MAXP-people.length));
+  for(let i=0;i<vis;i++){
+    const x=doorX(t,STOPX+(Math.random()-.5)*t.len*.9);
+    const p=newPerson(x,edge,.5);p.delay=.4+i*.22;p.path=exitPath(plat,x,edge);p.state="walk";p.i=0;people.push(p);
+  }
+}
+function doorX(t,x){const n=1+G.L.cars,x0=t.x-t.len/2;const k=Math.floor((x-x0)/(CAR+GAP)*2);return x0+(k+.5)*(CAR+GAP)/2}
+function drawTrains(){
+  const r=rates(G.L);
+  for(const t of trains){
+    if(t.i>=r.tracks||t.phase==="wait")continue;
+    const n=Math.round(t.len/(CAR+GAP)),x0=t.x-t.len/2;
+    const expressTrain=G.L.express&&t.i===3;
+    for(let k=0;k<n;k++){
+      const a=x0+k*(CAR+GAP),b=a+CAR;
+      if(b<0||a>MAPX)continue;
+      q((a+b)/2,t.y,()=>expressTrain?drawBullet(t,a,b,k,n):drawCar(t,a,b,k,n,false));
+    }
+  }
+}
+/* Vysokorychlostní souprava: bílý aerodynamický vlak s dlouhým nosem na obou koncích */
+function drawBullet(t,a,b,k,n){
+  const yc=t.y,xa=Math.max(a,0),xb=Math.min(b,MAPX);
+  if(xb-xa<.02)return;
+  const hasL=k===0,hasR=k===n-1,NL=1.95;
+  const star=t.sp==="hoshi";
+  const body=star?"#22335f":"#f4f6f7",blue=star?"#e3b84c":"#1d3f8a",glass=star?mix("#0e1626","#ffe7a0",night*.25):mix("#1c2a3a","#ffe7a0",night*.25);
+  const sect=x=>{
+    const d=Math.min(hasL?x-a:9,hasR?b-x:9),tn=Math.max(0,Math.min(1,d/NL));
+    const hw=.13+.49*Math.pow(tn,.55),zt=.46+1.26*Math.pow(tn,.92),zs=zt-(.05+.17*tn),zb=.22+.1*(1-tn);
+    return {tn,hw,tw:hw*(.28+.34*tn),zt,zs,zb};
+  };
+  const P=(pts,f)=>{poly(pts,f);c.strokeStyle=f;c.lineWidth=.35;c.stroke()};
+  poly([xa,yc+.62,.02,xb,yc+.62,.02,xb,yc+.78,.01,xa,yc+.78,.01],"rgba(15,20,30,.2)");
+  const step=.16;
+  for(let x=xa;x<xb-1e-4;x+=step){
+    const x1=Math.min(x+step,xb),A=sect(x),B=sect(x1),mt=(A.tn+B.tn)/2;
+    const cock=mt>.5&&mt<.8; // kabina strojvedoucího
+    const slope=(hasR&&b-x<NL)?.08*(1-mt):0;
+    P([x,yc-A.tw,A.zt,x1,yc-B.tw,B.zt,x1,yc+B.tw,B.zt,x,yc+A.tw,A.zt],cock?glass:dark(body,slope));
+    P([x,yc+A.tw,A.zt,x1,yc+B.tw,B.zt,x1,yc+B.hw,B.zs,x,yc+A.hw,A.zs],cock?glass:dark(body,.05+slope));
+    P([x,yc+A.hw,A.zs,x1,yc+B.hw,B.zs,x1,yc+B.hw,B.zb,x,yc+A.hw,A.zb],dark(body,.11+slope));
+    const L=(s2,v)=>s2.zb+(s2.zs-s2.zb)*v;
+    P([x,yc+A.hw,L(A,.2),x1,yc+B.hw,L(B,.2),x1,yc+B.hw,L(B,.34),x,yc+A.hw,L(A,.34)],blue);
+    P([x,yc+A.hw,L(A,.39),x1,yc+B.hw,L(B,.39),x1,yc+B.hw,L(B,.42),x,yc+A.hw,L(A,.42)],blue);
+  }
+  // rovná část vozu: spodní kryt, dveře, řada malých oken
+  const xs=a+(hasL?NL:0)+.08,xe=b-(hasR?NL:0)-.08,Y1=yc+.62;
+  const sa=Math.max(xs,xa),sb=Math.min(xe,xb);
+  if(sb>sa)wallY(sa,sb,Y1,.13,.22,"#2a2f38");
+  const open=t.phase==="dwell"&&t.t>.4&&t.t<TD-.5;
+  const doors=[];if(!hasL)doors.push(xs);if(!hasR)doors.push(xe-.42);
+  for(let u=xs+(hasL?.05:.52);u+.17<=xe-(hasR?.05:.47);u+=.31){
+    if(u<xa||u+.17>xb)continue;
+    wallY(u,u+.17,Y1,1.02,1.26,mix("#25384a","#ffe7a0",night*.9));
+  }
+  for(const d of doors){
+    if(d<xa||d+.42>xb)continue;
+    wallY(d-.02,d+.44,Y1,.33,1.33,dark(body,.24));
+    wallY(d,d+.42,Y1,.35,1.31,open?"#191d25":dark(body,.06));
+    if(!open){wallY(d+.13,d+.29,Y1,.95,1.22,mix("#25384a","#ffe7a0",night*.9));wallY(d+.205,d+.215,Y1,.35,1.31,dark(body,.28))}
+  }
+  if(star&&sb>sa){ // zlaté hvězdičky pod okny
+    c.fillStyle="#f4d67a";
+    for(let u=xs+.3,n=0;u<xe-.2;u+=.42,n++){if(u<xa||u>xb)continue;const X=px(u,Y1),Y=py(u,Y1,.82+(n%3)*.07),r=n%2?.8:1.2;c.beginPath();c.arc(X,Y,r,0,6.3);c.fill()}
+  }
+  if(night>.35&&xa===a&&xb===b)addLight((a+b)/2,Y1,1.1,1,.28);
+  // konce: zadní stěna vozu nebo špička nosu se světly
+  if(b<=MAPX){
+    if(hasR){
+      const on=t.dir>0,lc=on?"#fff3bd":"#d0342c",E=sect(b-.01);
+      wallX(b,yc-E.hw,yc+E.hw,E.zb,E.zt,dark(body,.16));
+      for(const dy of [-.26,.26]){
+        const d=b-.46,S=sect(d),py0=yc+dy*(S.hw/.3)*.72;
+        poly([d-.1,py0-.05,S.zt-.04,d+.1,py0-.05,S.zt-.06,d+.1,py0+.05,S.zt-.06,d-.1,py0+.05,S.zt-.04],lc);
+      }
+      if(on)addLight(b+.1,yc,.5,1.1,.7);
+    }else{
+      wallX(b,yc-.5,yc+.5,.3,1.62,dark(body,.32));
+      wallX(b,yc-.2,yc+.2,.34,1.4,"#2a2f38");
+    }
+  }
+  // sběrač s aerodynamickým krytem
+  if(k%3===1&&a>=0&&b<=MAPX){
+    const X=(a+b)/2;
+    box(X-.55,yc-.26,1.72,1.1,.52,.07,"#e3e7e9");
+    c.strokeStyle="#39414b";c.lineWidth=1;c.beginPath();c.moveTo(px(X,yc),py(X,yc,1.8));c.lineTo(px(X-.16,yc),py(X-.16,yc,2.06));c.lineTo(px(X,yc),py(X,yc,2.26));c.moveTo(px(X-.3,yc),py(X-.3,yc,2.26));c.lineTo(px(X+.3,yc),py(X+.3,yc,2.26));c.stroke();
+  }
+}
+function drawCar(t,a,b,k,n,ex){
+  const Y0=t.y-.62,Y1=t.y+.62,xa=Math.max(a,0),xb=Math.min(b,MAPX);
+  if(xb-xa<.02)return;
+  const elec=G.L.elec,R=(p,q)=>[Math.max(p,xa),Math.min(q,xb)];
+  const Z0=.32,Z1=1.74,ZS=Z1-.14; // ZS: zaoblený přechod boku do střechy
+  let body,stripe,rf;
+  const kaze=t.sp==="kaze";
+  if(kaze){body="#f3efe0";stripe="#1f7a5c";rf="#c9c6b6"}
+  else if(ex){body="#f2f4f5";stripe="#22407a";rf="#c9d0d4"}
+  else if(elec){body="#bcc4c9";stripe=["#1f8a78","#e08a2a","#3573b4"][t.i%3];rf="#8d979e"}
+  else{body="#efe4c8";stripe=["#b8402f","#2d7f6c","#3a659e"][t.i%3];rf="#878679"}
+  const side=dark(body,.1),glass=mix("#33475a","#ffe7a0",night*.9);
+  poly([xa,Y1,.03,xb,Y1,.03,xb,Y1+.16,.02,xa,Y1+.16,.02],"rgba(15,20,30,.2)");
+  // střecha se zaobleným ramenem
+  top(xa,Y0+.12,Z1,xb-xa,Y1-Y0-.24,rf);
+  poly([xa,Y1,ZS,xb,Y1,ZS,xb,Y1-.12,Z1,xa,Y1-.12,Z1],dark(rf,.1));
+  // podvozky a výzbroj pod podlahou
+  wallY(xa,xb,Y1-.04,.2,Z0,"#2a2e36");
+  const [ea,eb]=R(a+1.25,b-1.25);if(eb>ea)wallY(ea,eb,Y1-.02,.14,.28,"#3d434d");
+  for(const cx of [a+.68,b-.68])for(const off of [-.22,.22]){
+    const wx=cx+off;if(wx<xa+.1||wx>xb-.1)continue;
+    c.save();c.transform(1,.5,0,1,px(wx,Y1),py(wx,Y1,.15));c.fillStyle="#191c22";c.beginPath();c.arc(0,0,3.5,0,6.3);c.fill();c.fillStyle="#6d737b";c.beginPath();c.arc(0,0,1.2,0,6.3);c.fill();c.restore();
+  }
+  // bok
+  wallY(xa,xb,Y1,Z0,ZS,side);
+  const [ga,gb]=R(a+.03,b-.03);
+  wallY(ga,gb,Y1,ZS-.09,ZS-.05,dark(side,.14));          // okapnice
+  wallY(xa,xb,Y1,Z0,Z0+.05,dark(side,.24));              // spodní lem
+  // okna a dveře: příměstská řada má 4 páry dveří na vůz, rychlík 2
+  const doors=kaze?[.12,3.26]:ex?[.42,3.0]:[.3,1.26,2.22,3.18];
+  const open=t.phase==="dwell"&&t.t>.4&&t.t<TD-.5&&t.i%2===1; // viditelný bok má nástupiště jen u 2. a 4. koleje
+  const zWinA=Z0+.56,zWinB=Z0+1.08;
+  let pu=0;
+  for(const u of [...doors,CAR]){
+    // okno mezi předchozími dveřmi a těmito
+    const wa=pu?pu+.42+.05:.05,wb=u-.05;
+    if(wb-wa>.1){
+      const [p,q]=R(a+wa,a+wb);
+      if(q-p>.02)wallY(p,q,Y1,zWinA,zWinB,glass);
+    }
+    pu=u;
+  }
+  const [sa,sb]=R(a,b);
+  wallY(sa,sb,Y1,Z0+.36,Z0+.5,stripe);                   // pás linky pod okny
+  if(kaze)wallY(sa,sb,Y1,Z0+.28,Z0+.33,"#e0a93a");
+  for(const u of doors){
+    const [p,q]=R(a+u,a+u+.42);
+    if(q-p<.02)continue;
+    wallY(p,q,Y1,Z0+.03,Z0+1.14,open?"#191d25":dark(body,.2));
+    if(!open){
+      const m=(p+q)/2;
+      if(m-.02>p)wallY(p+.03,m-.02,Y1,Z0+.56,Z0+1.06,glass);
+      if(q-.03>m+.02)wallY(m+.02,q-.03,Y1,Z0+.56,Z0+1.06,glass);
+      wallY(m-.006,m+.006,Y1,Z0+.03,Z0+1.14,dark(body,.42));
+    }
+  }
+  if(night>.35&&xa===a&&xb===b)addLight((a+b)/2,Y1,1,1.1,.3);
+  // střešní klimatizace / sběrač
+  if(a>=0&&b<=MAPX){
+    box(a+CAR/2+(elec&&k%2===0?.75:0)-.5,t.y-.28,Z1,1,.56,.11,dark(rf,.14));
+    if(!elec)box(a+.55,t.y-.15,Z1,.5,.3,.09,"#6d6f6a");
+    if(elec&&k%2===0){
+      const X=a+1;
+      box(X-.25,t.y-.2,Z1,.5,.4,.05,"#4f5862");
+      c.strokeStyle="#39414b";c.lineWidth=1;c.beginPath();c.moveTo(px(X,t.y),py(X,t.y,Z1+.05));c.lineTo(px(X-.12,t.y),py(X-.12,t.y,2.08));c.lineTo(px(X,t.y),py(X,t.y,2.26));c.moveTo(px(X-.3,t.y),py(X-.3,t.y,2.26));c.lineTo(px(X+.3,t.y),py(X+.3,t.y,2.26));c.stroke();
+    }
+  }
+  // konec vozu
+  const head=k===n-1,headRight=ex&&head&&t.dir>0;
+  if(b<=MAPX){
+    wallX(b,Y0,Y1,Z0,ZS,dark(body,.26));
+    poly([b,Y0+.12,Z1,b,Y1-.12,Z1,b,Y1,ZS,b,Y0,ZS],dark(rf,.28));
+    if(head&&kaze){
+      // zvýšená kabina se šikmým čelem
+      const N=.62,Zc=Z0+.98,Xn=b+N;
+      if(Xn<=MAPX){
+        poly([b,Y1,Z0,Xn,Y1-.08,Z0,Xn,Y1-.08,Zc,b,Y1,ZS],dark(body,.1));
+        poly([b,Y1,Z0+.36,Xn,Y1-.08,Z0+.36,Xn,Y1-.08,Z0+.5,b,Y1,Z0+.5],stripe);
+        poly([b,Y1-.12,Z1,Xn,Y1-.2,Zc,Xn,Y1-.08,Zc,b,Y1,ZS],dark(body,.04));
+        poly([b,Y0+.12,Z1,b,Y1-.12,Z1,Xn,Y1-.2,Zc,Xn,Y0+.2,Zc],"#26333f");
+        poly([b,t.y-.012,Z1,b,t.y+.012,Z1,Xn,t.y+.012,Zc,Xn,t.y-.012,Zc],dark(body,.12));
+        wallX(Xn,Y0+.08,Y1-.08,Z0-.02,Zc,dark(body,.24));
+        wallX(Xn,Y0+.08,Y1-.08,Z0+.36,Z0+.5,dark(stripe,.14));
+        const on=t.dir>0,lc=on?"#fff3bd":"#a92f28";
+        wallX(Xn,Y0+.12,Y0+.34,Z0+.54,Z0+.66,lc);wallX(Xn,Y1-.34,Y1-.12,Z0+.54,Z0+.66,lc);
+        wallX(Xn,Y0+.06,Y1-.06,Z0-.1,Z0+.04,"#20242b");
+        if(on)addLight(Xn+.1,t.y,.7,1,.65);
+      }
+    }else if(head){
+      // čelo: tmavá plocha s velkým oknem, nápisem cíle a světly
+      wallX(b,Y0+.05,Y1-.05,Z0+.42,ZS-.02,"#1c222c");
+      wallX(b,Y0+.11,Y1-.11,Z0+.72,ZS-.2,mix("#3f596c","#c9b477",night*.5));
+      wallX(b,t.y-.28,t.y+.28,ZS-.17,ZS-.05,"#0f1216");
+      textX(ex?"特急":"普通",b,t.y,ZS-.11,3.2,ex?"#ff8d5c":"#ffa94d");
+      wallX(b,Y0,Y1,Z0+.28,Z0+.42,dark(stripe,.12));
+      const on=t.dir>0&&(t.phase==="in"||t.phase==="out"),lc=on?"#fff3bd":"#a92f28";
+      wallX(b,Y0+.09,Y0+.27,Z0+.13,Z0+.24,lc);wallX(b,Y1-.27,Y1-.09,Z0+.13,Z0+.24,lc);
+      wallX(b,Y0+.04,Y1-.04,Z0-.08,Z0+.05,"#20242b");   // pluh
+      if(on)addLight(b+.1,t.y,.5,1,.65);
+    }else{
+      wallX(b,t.y-.24,t.y+.24,Z0+.08,Z0+1.1,dark(body,.4)); // přechodové dveře
+      wallX(b,t.y-.13,t.y+.13,Z0+.62,Z0+1.02,glass);
+    }
+  }
+  if(headRight&&b+1.1<=MAPX){
+    poly([b,Y0,Z1,b+1.1,t.y-.3,Z0+.32,b+1.1,t.y+.3,Z0+.32,b,Y1,Z1],"#e6ecef");
+    poly([b,Y1,Z1,b+1.1,t.y+.3,Z0+.32,b+1.1,t.y+.3,Z0,b,Y1,Z0],"#cdd5d9");
+    poly([b,Y1-.2,Z1-.04,b+.5,t.y+.2,Z0+.82,b+.5,t.y-.2,Z0+.82,b,Y0+.2,Z1-.04],"#24303f");
+  }
+}
+
+/* ─────────────── AUTA ─────────────── */
+/* Profil vozu: body [u,z] zezadu dopředu, u = vzdálenost od zádi. e = barva hrany: g sklo, r střecha, b ložná plocha */
+const CAR_MODELS={
+ wagon:{L:1.34,w:.35,weight:3,plate:"kei",wh:[.27,1.08],hl:.56,
+  prof:[[0,.2],[0,1],[.07,1.1],[.93,1.12],[1.14,.72],[1.3,.62],[1.34,.46],[1.34,.2]],e:{0:"",2:"r",3:"g"},
+  win:[[.1,.68],[.1,1],[.9,1.02],[1.07,.7]],cols:[["#f3f3ee"],["#c6cbce"],["#a9d6c5"],["#2d3f5e"],["#e0806f"],["#e9d9b5","#f7f5ee"],["#7c8fa3","#f3f3ee"]]},
+ hatch:{L:1.34,w:.34,weight:3,plate:"kei",wh:[.27,1.06],hl:.47,
+  prof:[[0,.2],[.01,.72],[.14,.9],[.72,.92],[1,.62],[1.3,.54],[1.34,.42],[1.34,.2]],e:{2:"r",3:"g",1:"g"},
+  win:[[.13,.62],[.2,.84],[.7,.86],[.9,.62]],cols:[["#f3f3ee"],["#bfc5c9"],["#e9c64f"],["#8fbcd6"],["#7a2f35"]]},
+ truck:{L:1.36,w:.35,weight:2,plate:"biz",wh:[.26,1.08],hl:.42,bed:1,
+  prof:[[0,.28],[0,.5],[.72,.5],[.72,1],[.8,1.06],[1.2,1.06],[1.33,.68],[1.36,.5],[1.36,.2]],e:{1:"b",4:"r",5:"g"},
+  win:[[.8,.68],[.84,.98],[1.15,.98],[1.25,.68]],cols:[["#f4f4ee"],["#f4f4ee"],["#f4f4ee"],["#c6cbce"],["#5d9c86"]]},
+ van:{L:1.42,w:.35,weight:1.5,plate:"biz",wh:[.27,1.14],hl:.5,
+  prof:[[0,.2],[0,1.02],[.04,1.1],[1.05,1.1],[1.25,.72],[1.38,.62],[1.42,.46],[1.42,.2]],e:{2:"r",3:"g"},
+  win:[[.72,.7],[.72,1],[1.02,1],[1.17,.7]],cols:[["#f4f4ee"],["#f4f4ee"],["#d2d6d8"]]},
+ retro:{L:1.3,w:.34,weight:2,plate:"kei",wh:[.26,1.04],hl:.5,round:1,
+  prof:[[0,.2],[0,.72],[.05,.88],[.16,.98],[.86,1],[1.02,.8],[1.14,.68],[1.27,.6],[1.3,.45],[1.3,.2]],e:{3:"r",4:"g"},
+  win:[[.12,.66],[.18,.9],[.84,.92],[.97,.68]],cols:[["#b9dcc7","#fbfaf2"],["#eec2c0","#fbfaf2"],["#f0e4c4","#fbfaf2"],["#a6cde0","#fbfaf2"]]},
+ taxi:{L:1.6,w:.4,weight:1,plate:"biz",wh:[.32,1.28],hl:.5,taxi:1,
+  prof:[[0,.26],[0,.62],[.28,.66],[.46,.98],[1.02,.98],[1.24,.66],[1.56,.6],[1.6,.46],[1.6,.26]],e:{2:"g",3:"r",4:"g"},
+  win:[[.33,.68],[.49,.92],[1,.92],[1.17,.68]],cols:[["#23262c"],["#2c4a3f"],["#e6c53f"]]},
+ hayate:{L:1.6,w:.42,plate:"std",wh:[.33,1.27],hl:.44,sport:1,
+  prof:[[0,.26],[0,.6],[.1,.68],[.42,.72],[.66,.92],[.98,.92],[1.26,.58],[1.56,.48],[1.6,.36],[1.6,.2]],e:{3:"g",4:"r",5:"g"},
+  win:[[.5,.68],[.7,.86],[.96,.86],[1.15,.66]],cols:[["#d9dde0"],["#1d2f5c"],["#b3202a"]]},
+};
+const CAR_POOL=Object.keys(CAR_MODELS).filter(k=>CAR_MODELS[k].weight);
+function pickCar(a,kind){
+  let k=kind;
+  if(!k){let r=Math.random()*CAR_POOL.reduce((n,x)=>n+CAR_MODELS[x].weight,0);for(const x of CAR_POOL){r-=CAR_MODELS[x].weight;if(r<=0){k=x;break}}k=k||"hatch"}
+  const m=CAR_MODELS[k],c=m.cols[Math.floor(Math.random()*m.cols.length)];
+  a.m=k;a.col=c[0];a.col2=c[1]||c[0];a.load=Math.floor(Math.random()*3);a.claimed=false;a.told=false;
+  return a;
+}
+// v Japonsku se jezdí vlevo: na jih (+y) bližším pruhem, na sever vzdálenějším
+const autos=[{lane:34.5,y:-2,dir:1,v:3},{lane:33.5,y:30,dir:-1,v:3},{lane:34.5,y:-12,dir:1,v:3},{lane:33.5,y:42,dir:-1,v:3},{lane:34.5,y:-20,dir:1,v:3},{lane:33.5,y:50,dir:-1,v:3}].map(a=>pickCar(a));
+let sportIn=50+Math.random()*30,sportOut=false;
+function respawnAuto(a){
+  const wasSport=a.m==="hayate";
+  if(wasSport){sportOut=false;sportIn=80+Math.random()*90}
+  const spot=3+Math.random()*22;
+  a.y=a.dir>0?-spot:MAPY+3+spot;a.commit=false;
+  if(sportIn<=0&&!sportOut){sportOut=true;pickCar(a,"hayate");a.y=a.dir>0?-3:MAPY+3}
+  else pickCar(a);
+}
+const gateN=12.1,stopN=11.2;
+const gateSY=()=>TRACKY[G.L.tracks]+1,stopSY=()=>gateSY()+.85;
+function inCrossing(a){return a.dir>0?a.y>stopN&&a.y<gateSY()+.9:a.y<stopSY()&&a.y>gateN-.9}
+function updateAutos(dt){
+  if(!sportOut)sportIn-=dt;
+  const closed=gateTarget||gateClosed>.03,stopS=stopSY();
+  for(const a of autos){
+    const d=a.dir>0?stopN-a.y:a.y-stopS; // vzdálenost ke stop čáře
+    if(d>=0&&d<.5&&a.v>1.5&&!closed)a.commit=true; // už nestihne brzdit, přejede dřív, než závory klesnou
+    if(d<-12)a.commit=false;
+    const sport=a.m==="hayate";
+    if(sport&&!a.told&&a.y>1&&a.y<MAPY-1){a.told=true;toast("Projíždí vzácný sporťák Hayate. Klikni na něj pro bonus.",3500)}
+    let target=sport?5:inCrossing(a)||a.commit?3.8:2.6;
+    if(closed&&d>=0&&!a.commit)target=Math.min(target,d*2.2);
+    for(const b of autos){if(b===a||b.lane!==a.lane)continue;const g=(b.y-a.y)*a.dir;if(g>0&&g<2.1)target=0}
+    const dz=a.dir>0?zStopN-a.y:a.y-zStopS,dn=a.dir>0?z2StopN-a.y:a.y-z2StopS;
+    if(zebraBusy.S&&dz>=0)target=Math.min(target,dz*2.2);
+    if(zebraBusy.N&&dn>=0)target=Math.min(target,dn*2.2);
+    const db=a.dir>0?3.85-a.y:a.y-7.6;
+    if(busCross&&db>=0)target=Math.min(target,db*2.2);
+    a.v+=(target-a.v)*Math.min(1,dt*(target<a.v?6:1.4));
+    let ny=a.y+a.dir*a.v*dt;
+    if(closed&&d>=0&&!a.commit)ny=a.dir>0?Math.min(ny,stopN):Math.max(ny,stopS); // stop čáru nikdy nepřejede
+    if(zebraBusy.S&&dz>=0)ny=a.dir>0?Math.min(ny,zStopN):Math.max(ny,zStopS);
+    if(zebraBusy.N&&dn>=0)ny=a.dir>0?Math.min(ny,z2StopN):Math.max(ny,z2StopS);
+    if(busCross&&db>=0)ny=a.dir>0?Math.min(ny,3.85):Math.max(ny,7.6);
+    a.y=ny;
+    if(a.dir>0&&a.y>31||a.dir<0&&a.y<-3)respawnAuto(a);
+  }
+}
+function drawVehicle(a,t){
+  const m=CAR_MODELS[a.m],x0=a.lane-m.w,x1=a.lane+m.w,dir=a.dir;
+  const Yu=u=>a.y+dir*(u-m.L/2);
+  // hrany profilu ve světových souřadnicích, seřazené od zadního k přednímu y
+  let ed=[];
+  for(let i=0;i<m.prof.length-1;i++){
+    const P=m.prof[i],N=m.prof[i+1],k=m.e[i]||"";
+    ed.push({ya:Yu(P[0]),za:P[1],yb:Yu(N[0]),zb:N[1],k});
+  }
+  if(dir<0)ed=ed.reverse().map(e=>({ya:e.yb,za:e.zb,yb:e.ya,zb:e.za,k:e.k}));
+  const ymin=Math.min(Yu(0),Yu(m.L)),ymax=Math.max(Yu(0),Yu(m.L));
+  poly([x0,ymin,.01,x1+.08,ymin,.01,x1+.08,ymax+.1,.01,x0,ymax+.1,.01],"rgba(15,20,30,.24)");
+  const glass=mix("#3d5566","#ffe7a0",night*.3);
+  // pneumatiky pod koncem vozu
+  poly([x0+.03,ymax,.02,x0+.15,ymax,.02,x0+.15,ymax,.22,x0+.03,ymax,.22],"#17191e");
+  poly([x1-.15,ymax,.02,x1-.03,ymax,.02,x1-.03,ymax,.22,x1-.15,ymax,.22],"#17191e");
+  for(const e of ed){
+    const dy=e.yb-e.ya,dz=e.zb-e.za;
+    if(Math.abs(dy)<.001&&dz>=0)continue; // odvrácená svislá plocha
+    const flat=Math.abs(dz)<Math.abs(dy)*.25;
+    let f=e.k==="g"?glass:e.k==="r"?a.col2:e.k==="b"?"#a9adb0":a.col;
+    if(e.k!=="g")f=flat?f:dz>0?dark(f,.05):dark(f,.14);
+    poly([x0,e.ya,e.za,x1,e.ya,e.za,x1,e.yb,e.zb,x0,e.yb,e.zb],f);
+  }
+  // bok
+  const side=[];
+  for(const e of ed)side.push(x1,e.ya,e.za);
+  const lastE=ed[ed.length-1];side.push(x1,lastE.yb,lastE.zb);
+  poly(side,dark(a.col,.24));
+  wallX(x1,ymin+.02,ymax-.02,.2,.3,dark(a.col,.5));
+  if(m.bed){ // ložná plocha s bočnicemi
+    const yA=Yu(0),yB=Yu(.7);
+    wallX(x1,Math.min(yA,yB),Math.max(yA,yB),.5,.66,dark(a.col,.1));
+    const ym=(yA+yB)/2;
+    if(a.load===1){box(a.lane-.2,ym-.2,.5,.4,.4,.26,"#b98a55")}
+    if(a.load===2){box(a.lane-.24,ym-.25,.5,.22,.5,.2,"#7da25a");box(a.lane+.02,ym-.25,.5,.22,.5,.2,"#d67f3c")}
+  }
+  // boční okna
+  const w=[];m.win.forEach(p=>w.push(x1,Yu(p[0]),p[1]));
+  poly(w,glass);
+  // kola
+  for(const u of m.wh){
+    const X=px(x1,Yu(u)),Y=py(x1,Yu(u),.15),spin=m.sport?4.2:3.6;
+    c.save();c.transform(1,-.5,0,1,X,Y);c.fillStyle="#17191e";c.beginPath();c.arc(0,0,spin,0,6.3);c.fill();c.fillStyle=m.sport?"#e8c64a":"#b8bcc0";c.beginPath();c.arc(0,0,spin*.48,0,6.3);c.fill();c.restore();
+  }
+  // viditelný konec vozu: dopředu jede k nám předkem, opačný směr ukazuje záď
+  const front=dir>0,zL=m.hl,lx=[x0+.09,x1-.09];
+  if(front){
+    if(m.round){for(const X of lx){c.fillStyle=mix("#fff6cf","#ffffff",night);c.beginPath();c.arc(px(X,ymax),py(X,ymax,zL-.05),2.2,0,6.3);c.fill()}}
+    else for(const X of lx)poly([X-.08,ymax,zL-.08,X+.08,ymax,zL-.08,X+.08,ymax,zL,X-.08,ymax,zL],"#fff6cf");
+    if(m.sport)poly([x0+.16,ymax,zL-.2,x1-.16,ymax,zL-.2,x1-.16,ymax,zL-.08,x0+.16,ymax,zL-.08],"#14161b");
+    if(night>.25)addLight(a.lane,ymax+.25,.3,1,.62);
+  }else{
+    for(const X of lx)poly([X-.08,ymax,zL-.03,X+.08,ymax,zL-.03,X+.08,ymax,zL+.07,X-.08,ymax,zL+.07],"#c33a31");
+    if(night>.25)addLight(a.lane,ymax,.5,.45,.5);
+  }
+  // značka: u kei vozů žlutá, u firemních černá se žlutým, u ostatních bílá
+  const pc=m.plate==="kei"?"#f4d240":m.plate==="biz"?"#22242a":"#f5f6f2",tc=m.plate==="biz"?"#f4d240":"#27593f";
+  poly([a.lane-.1,ymax,.25,a.lane+.1,ymax,.25,a.lane+.1,ymax,.36,a.lane-.1,ymax,.36],pc);
+  poly([a.lane-.06,ymax,.29,a.lane+.06,ymax,.29,a.lane+.06,ymax,.32,a.lane-.06,ymax,.32],tc);
+  if(m.taxi){const ym=Yu(.75);box(a.lane-.1,ym-.08,.98,.2,.16,.1,mix("#f6efc9","#ffe08a",night))}
+  if(m.sport){
+    // křídlo na zádi
+    const yw=Yu(.08);
+    box(x0+.04,yw-.09,.8,m.w*2-.08,.18,.04,dark(a.col,.3));
+    box(x0+.1,yw-.03,.6,.05,.06,.2,"#20232a");box(x1-.15,yw-.03,.6,.05,.06,.2,"#20232a");
+    if(!a.claimed){
+      const X=px(a.lane,a.y),Y=py(a.lane,a.y,1.2);
+      c.fillStyle="#ffe08a";
+      for(let i=0;i<3;i++){const p=(t*1.8+i*.33)%1,sx=X+Math.cos(i*2.1+t)*14,sy=Y-p*12,r=2.6*(1-p)+.6;c.beginPath();c.moveTo(sx,sy-r*1.6);c.lineTo(sx+r*.45,sy-r*.45);c.lineTo(sx+r*1.6,sy);c.lineTo(sx+r*.45,sy+r*.45);c.lineTo(sx,sy+r*1.6);c.lineTo(sx-r*.45,sy+r*.45);c.lineTo(sx-r*1.6,sy);c.lineTo(sx-r*.45,sy-r*.45);c.closePath();c.fill()}
+    }
+  }
+}
+function drawAutos(t){
+  const vis=autos.filter(a=>a.y>=.9&&a.y<=MAPY-.9);
+  const key=a=>STRIP(a.y)*10000+a.lane+a.y+1;
+  // auta v bližším pruhu (větší x) jsou při míjení vždy vpředu, i přes hranici pásů vrstvení
+  for(const a of vis){
+    let k=key(a);
+    if(a.lane>34)for(const b of vis)if(b.lane<34&&Math.abs(a.y-b.y)<2.2)k=Math.max(k,key(b)+.01);
+    Q.push({k,fn:()=>drawVehicle(a,t)});
+  }
+}
+
+/* ─────────────── LIDÉ ─────────────── */
+const MAXP=90;
+const OUTFIT=["#27364d","#27364d","#3d4c63","#e8e4d8","#b84a3a","#5a7d5a","#d9a13a","#7c5a86","#f0f0ea"];
+let people=[];
+function newPerson(x,y,z){
+  return {x,y,z,state:"walk",path:[],i:0,col:OUTFIT[Math.floor(Math.random()*OUTFIT.length)],hat:Math.random()<.1,ph:Math.random()*6,v:1.25+Math.random()*.35,delay:0,hide:0,plat:null,hair:Math.random()<.14?"#a8a29a":"#242428"};
+}
+const ZEBRA_Y=6.33,zStopN=5.05,zStopS=7.6,ZEBRA2_Y=3.47,z2StopN=2.25,z2StopS=4.72;
+let zebraBusy={},zebraBusyT=0,zebraCool=0;
+/* Čtyři přechody: S a N přes silnici, W a E přes ulici. c = na tento bod se jde po přechodu */
+function streetRoute(){
+  const r=Math.random();
+  const toPlaza=[{x:32.9,y:3.72},{x:32.5,y:3.86},{x:32.5,y:5.95,c:"W"}];
+  const south=[{x:35.1,y:5.95},{x:35.1,y:ZEBRA_Y},{x:32.9,y:ZEBRA_Y,c:"S"},{x:32.9,y:5.95}];
+  if(r<.3)return {sx:32.9,sy:.15,nodes:toPlaza};
+  if(r<.55)return {sx:39.7,sy:5.95,nodes:south};
+  if(r<.8)return {sx:39.7,sy:3.75,nodes:[{x:35.1,y:3.75},{x:35.1,y:ZEBRA2_Y},{x:32.9,y:ZEBRA2_Y,c:"N"},{x:32.5,y:3.86},{x:32.5,y:5.95,c:"W"}]};
+  return {sx:39.7,sy:3.75,nodes:[{x:35.5,y:3.75},{x:35.5,y:5.95,c:"E"},...south]};
+}
+function crossFree(zone){
+  if(zebraCool>0)return false;
+  if(zone==="N")return autos.every(a=>{
+    const d=a.dir>0?z2StopN-a.y:a.y-z2StopS;
+    if(d<0)return a.dir>0?a.y>=z2StopS:a.y<=z2StopN;
+    return !(d<.9&&a.v>1);
+  });
+  if(zone==="W"){
+    if(bus.phase!=="come")return !(bus.phase!=="off"&&bus.x<32.97&&bus.x+BUS_LEN>32);
+    return !(bus.x<32.97&&bus.x+BUS_LEN>32)&&!(bus.x>=32.97&&bus.x<34.3&&bus.v>.5);
+  }
+  if(zone==="E"){
+    if(bus.phase!=="come")return true;
+    return !busCross&&!(bus.x<BUS_LINE&&bus.x+BUS_LEN>35)&&!(bus.x>=BUS_LINE&&bus.x<37.3&&bus.v>.5);
+  }
+  return zebraFree();
+}
+function zebraFree(){ // chodec vstoupí, jen když ho žádné auto neohrozí
+  if(zebraCool>0)return false;
+  return autos.every(a=>{
+    const d=a.dir>0?zStopN-a.y:a.y-zStopS;
+    if(d<0)return a.dir>0?a.y>=zStopS:a.y<=zStopN;
+    return !(d<.9&&a.v>1);
+  });
+}
+const DOOR={x:15.05,y:11.1,z:.5};
+function pathToPlat(plat){
+  const r=Math.random;
+  const pts=[];
+  if(plat==="A"){pts.push({x:6+r()*22,y:11.3+r()*.8,z:.5});return pts}
+  const y=plat==="I"?16.25:20.75;
+  pts.push({x:10.95,y:11.75,z:.5},{x:8.6,y:11.75,z:2.6},{x:8.1,y:11.75,z:2.6},{x:8.1,y,z:2.6},{x:8.6,y,z:2.6},{x:10.95,y,z:.5});
+  const sy=plat==="I"?15.85+r()*.8:20.35+r()*.8;
+  pts.push({x:11.3+r()*17,y:sy,z:.5});
+  return pts;
+}
+function exitPath(plat,x,y){
+  const pts=[];
+  if(plat!=="A"){
+    const by=plat==="I"?16.25:20.75;
+    pts.push({x:11,y:by,z:.5},{x:8.6,y:by,z:2.6},{x:8.1,y:by,z:2.6},{x:8.1,y:11.75,z:2.6},{x:8.6,y:11.75,z:2.6},{x:10.95,y:11.75,z:.5});
+  }
+  pts.push({...DOOR,hide:3});
+  pts.push({x:19.15,y:9.5,z:0},{x:19.75,y:9.4,z:0},{x:19.85,y:8,z:0},{x:21+Math.random()*4,y:6.2+Math.random()*.9,z:0});
+  // na silnici s auty lidé nevstupují: doprava odcházejí po chodníku podél její hrany
+  if(Math.random()<.72)pts.push({x:19.6,y:5.95,z:0},{x:.3,y:5.85+Math.random()*.12,z:0,end:true});
+  else{const r=streetRoute();pts.push(...r.nodes.slice().reverse().map((n,i,a)=>({x:n.x,y:n.y,z:0,cross:i?a[i-1].c:undefined})),{x:r.sx,y:r.sy,z:0,cross:r.nodes[0].c,end:true})}
+  return pts;
+}
+function spawnArrival(){
+  const r=rates(G.L);
+  if(people.length>=MAXP)return;
+  const opts=["A"];if(r.tracks>=2)opts.push("I","I");if(r.tracks>=4)opts.push("C");
+  const plat=opts[Math.floor(Math.random()*opts.length)];
+  const left=Math.random()<.72,rt=left?null:streetRoute();
+  const p=left?newPerson(.3,5.9+Math.random()*.1,0):newPerson(rt.sx,rt.sy,0);
+  p.plat=plat;
+  const lead=left?[{x:19.6,y:5.95,z:0}]:rt.nodes.map(n=>({x:n.x,y:n.y,z:0,cross:n.c}));
+  p.path=[...lead,{x:21+Math.random()*4,y:6.2+Math.random()*.9,z:0},{x:19.85,y:8,z:0},{x:19.75,y:9.4,z:0},{x:19.15,y:9.5,z:0,hide:3},{...DOOR},...pathToPlat(plat)];
+  people.push(p);
+}
+let visAcc=0;
+function updatePeople(dt){
+  const r=rates(G.L);
+  visAcc+=Math.min(.8,r.demand)*(eventNow>=0?1.4:1)*dt;
+  while(visAcc>1){visAcc-=1;if(Math.floor(G.waiting)>=0)spawnArrival()}
+  for(const p of people){
+    if(p.delay>0){p.delay-=dt;continue}
+    if(p.hide>0){p.hide-=dt;continue}
+    if(p.hidden){ // prošel budovou: objeví se u druhých dveří
+      p.hidden=false;
+      const n=p.path[p.i];
+      if(n){p.x=n.x;p.y=n.y;p.z=n.z;p.i++}
+    }
+    if(p.state!=="walk")continue;
+    const w=p.path[p.i];
+    if(w&&w.cross&&!p.onZebra){if(!crossFree(w.cross))continue;p.onZebra=w.cross;zebraBusy[w.cross]=true}
+    if(!w){ // cíl
+      if(p.board){p.state="gone"}
+      else if(p.plat){p.state="wait"}
+      else p.state="gone";
+      continue;
+    }
+    const dx=w.x-p.x,dy=w.y-p.y,dz=w.z-p.z,d=Math.hypot(dx,dy);
+    const step=p.v*dt;
+    if(d<=step||d<.02){
+      p.x=w.x;p.y=w.y;p.z=w.z;p.i++;p.onZebra=false;
+      if(w.hide){p.hide=w.hide;p.hidden=true}
+      if(w.end)p.state="gone";
+    }else{
+      p.x+=dx/d*step;p.y+=dy/d*step;p.z+=dz*(step/Math.max(d,step));
+      p.flip=dx-dy<0;
+    }
+    p.ph+=dt*9;
+  }
+  people=people.filter(p=>p.state!=="gone");
+  zebraBusy={};for(const p of people)if(p.onZebra)zebraBusy[p.onZebra]=true;
+  // po delší řadě chodců pustí přechod i auta
+  zebraBusyT=zebraBusy.S||zebraBusy.N?zebraBusyT+dt:0;
+  if(zebraBusyT>4)zebraCool=7;
+  if(zebraCool>0)zebraCool-=dt;
+  // při zaplněném peronu lidi na ulici nikdy nezastavují: jen se přestanou přidávat
+}
+function drawPeople(){
+  for(const p of people){
+    if(p.hide>0||p.delay>0&&p.board===undefined&&!p.plat)continue;
+    if(p.delay>0&&!p.plat)continue;
+    q(p.x,p.y,()=>{
+      const X=px(p.x,p.y),Y=py(p.x,p.y,p.z),bob=p.state==="walk"?Math.abs(Math.sin(p.ph))*1.2:0;
+      c.fillStyle="rgba(15,20,30,.2)";c.beginPath();c.ellipse(X,Y,3.6,1.8,0,0,6.3);c.fill();
+      const sw=p.state==="walk"?Math.sin(p.ph)*1.8:0;
+      c.strokeStyle="#20242c";c.lineWidth=1.5;c.beginPath();c.moveTo(X-1,Y-5);c.lineTo(X-1-sw,Y);c.moveTo(X+1,Y-5);c.lineTo(X+1+sw,Y);c.stroke();
+      c.fillStyle=p.col;c.beginPath();c.roundRect(X-2.7,Y-12-bob,5.4,7.6,2);c.fill();
+      c.fillStyle="#efc9a6";c.beginPath();c.arc(X,Y-14-bob,2.5,0,6.3);c.fill();
+      c.fillStyle=p.hat?"#e6c04c":p.hair;c.beginPath();c.arc(X,Y-14.7-bob,2.5,Math.PI,0);c.fill();
+    },.02);
+  }
+}
+
+/* ─────────────── CYKLISTÉ ─────────────── */
+let riders=[],riderIn=2;
+const RIDER_TYPES=[{col:"#b84a3a",bike:"#2d6f9e",basket:1},{col:"#27364d",bike:"#d7d9d4",basket:1},{col:"#f0f0ea",bike:"#cf4a33",hat:"#e6c04c"},{col:"#5a7d5a",bike:"#22303f",basket:1},{col:"#7c5a86",bike:"#e0a93a",kid:1},{col:"#d9a13a",bike:"#3f8c6e"}];
+function spawnRider(){
+  const type=RIDER_TYPES[Math.floor(Math.random()*RIDER_TYPES.length)],east=Math.random()<.5,park=G.L.bike&&Math.random()<.45;
+  // jezdí jen ulicí a chodníkem u její hrany, do silnice s auty nevjíždějí
+  const laneE=4.4,laneW=5.3,N={x:32.9,y:.15},r={type,x:0,y:0,i:0,v:2.3+Math.random()*.7,ph:Math.random()*6,dx:1,dy:0,toRack:false};
+  if(park&&Math.random()<.3){ // odjíždí z parkoviště kol
+    r.x=27.3;r.y=9.7;
+    r.path=east?[{x:27.3,y:5.3},{x:.2,y:5.3,end:1}]:[{x:27.3,y:4.4},{x:32.78,y:4.4},{...N,end:1}];
+  }else if(east){ // přijíždí zleva
+    r.x=.2;r.y=laneE;
+    r.path=park?[{x:27.3,y:laneE},{x:27.3,y:9.7,rack:1}]:[{x:32.78,y:laneE},{...N,end:1}];
+  }else{ // přijíždí zprava od chodníku
+    r.x=N.x;r.y=N.y;
+    r.path=park?[{x:32.78,y:laneW},{x:27.3,y:laneW},{x:27.3,y:9.7,rack:1}]:[{x:32.78,y:laneW},{x:.2,y:laneW,end:1}];
+  }
+  riders.push(r);
+}
+function updateRiders(dt){
+  const want=(snow>.7?1:2)+(G.L.bike?2:0)+Math.floor(G.L.houses/4);
+  riderIn-=dt;
+  if(riderIn<=0){riderIn=2.5+Math.random()*5;if(riders.length<want)spawnRider()}
+  for(const r of riders){
+    const w=r.path[r.i];
+    if(!w){r.gone=true;continue}
+    const dx=w.x-r.x,dy=w.y-r.y,d=Math.hypot(dx,dy),st=r.v*dt;
+    r.ph+=dt*r.v*2.6;
+    if(d<=st){
+      r.x=w.x;r.y=w.y;r.i++;
+      if(w.end)r.gone=true;
+      if(w.rack){r.gone=true;
+        // z parkoviště pokračuje pěšky na peron
+        if(people.length<MAXP){
+          const n=rates(G.L),opts=["A"];if(n.tracks>=2)opts.push("I");if(n.tracks>=4)opts.push("C");
+          const plat=opts[Math.floor(Math.random()*opts.length)],p=newPerson(27.2,9.6,0);
+          p.plat=plat;p.col=r.type.col;
+          p.path=[{x:23+Math.random()*2,y:6.6+Math.random()*.6,z:0},{x:19.85,y:8,z:0},{x:19.75,y:9.4,z:0},{x:19.15,y:9.5,z:0,hide:3},{...DOOR},...pathToPlat(plat)];
+          people.push(p);
+        }
+      }
+    }else{
+      const nx=r.x+dx/d*st,ny=r.y+dy/d*st;
+      const inB=(X,Y)=>X>bus.x-.35&&X<bus.x+BUS_LEN+.35&&Y>BUS_Y0-.3&&Y<BUS_Y1+.3;
+      const body=nx>bus.x-.1&&nx<bus.x+BUS_LEN+.1&&ny>BUS_Y0-.1&&ny<BUS_Y1+.1;
+      const away=r.x<bus.x+.2&&dx<0; // kdo je před autobusem a jede od něj, nikdy nečeká
+      if(bus.phase!=="off"&&!away&&(body||inB(nx,ny)&&!inB(r.x,r.y))&&(r.blocked||0)<6){r.blocked=(r.blocked||0)+dt;continue} // před autobusem počká, kdo už je před ním, ujíždí
+      r.blocked=0;
+      r.x=nx;r.y=ny;r.dx=dx/d;r.dy=dy/d;
+    }
+  }
+  riders=riders.filter(r=>!r.gone);
+}
+function drawRiders(){
+  for(const r of riders){
+    q(r.x,r.y,()=>{
+      const T=r.type,X=px(r.x,r.y),Y=py(r.x,r.y);
+      let ux=(r.dx-r.dy)*HW,uy=(r.dx+r.dy)*HH;const l=Math.hypot(ux,uy);ux/=l;uy/=l;
+      const W=3.7,hub=6.2,fx=X+ux*hub,fy=Y+uy*hub-W,bx=X-ux*hub,by=Y-uy*hub-W;
+      c.fillStyle="rgba(15,20,30,.2)";c.beginPath();c.ellipse(X,Y,9,2.8,Math.atan2(uy,ux),0,6.3);c.fill();
+      // kola
+      c.strokeStyle="#17191e";c.lineWidth=1.1;
+      for(const [a,b] of [[bx,by],[fx,fy]]){c.beginPath();c.arc(a,b,W,0,6.3);c.stroke()}
+      // rám a řídítka
+      const sx=X-ux*2.6,sy=Y+uy*-2.6-10.6,hx=X+ux*4.6,hy=Y+uy*4.6-11.6,cx=X,cy=Y-W;
+      c.strokeStyle=T.bike;c.lineWidth=1.5;c.beginPath();c.moveTo(bx,by);c.lineTo(cx,cy);c.lineTo(sx,sy);c.lineTo(bx,by);c.moveTo(cx,cy);c.lineTo(hx,hy);c.lineTo(fx,fy);c.stroke();
+      if(T.basket){c.fillStyle="#b98a55";c.fillRect(hx+ux*1.2-2.4,hy+uy*1.2-2,4.8,3.6)}
+      if(T.kid){c.fillStyle="#3a3f4a";c.fillRect(sx-ux*3-2.1,sy-uy*3-1,4.2,3);c.fillStyle="#d9534a";c.beginPath();c.arc(sx-ux*3,sy-uy*3-3.2,2.1,0,6.3);c.fill();c.fillStyle="#efc9a6";c.beginPath();c.arc(sx-ux*3,sy-uy*3-6,1.6,0,6.3);c.fill()}
+      // šlapání
+      const a=Math.sin(r.ph)*2.1,b=Math.cos(r.ph)*2.1;
+      c.strokeStyle="#20242c";c.lineWidth=1.6;c.beginPath();c.moveTo(sx,sy);c.lineTo(cx+ux*a,cy+b);c.stroke();
+      // trup, ruce a hlava v mírném předklonu
+      const nx=sx+ux*1.8,ny=sy-7.2;
+      c.strokeStyle=T.col;c.lineWidth=4.2;c.lineCap="round";c.beginPath();c.moveTo(sx,sy-.5);c.lineTo(nx,ny);c.stroke();
+      c.lineWidth=1.3;c.beginPath();c.moveTo(nx,ny+1);c.lineTo(hx,hy);c.stroke();c.lineCap="butt";
+      c.fillStyle="#efc9a6";c.beginPath();c.arc(nx+ux*.6,ny-3.6,2.4,0,6.3);c.fill();
+      c.fillStyle=T.hat||"#242428";c.beginPath();c.arc(nx+ux*.6,ny-4.3,2.4,Math.PI,0);c.fill();
+    },.03);
+    if(night>.25)addLight(r.x+r.dx*.4,r.y+r.dy*.4,.45,.42,.7);
+  }
+}
+
+/* ─────────────── ČÁSTICE, KOČKA ŠTĚSTÍ, POPISKY ─────────────── */
+let floats=[],bits=[],steam=[];
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function updateFx(dt,now){
+  floats.forEach(f=>{f.life-=dt;f.z+=dt*.45});floats=floats.filter(f=>f.life>0);
+  const want=reduced?0:season===0?(eventNow===0?130:40):season===3?(eventNow===3?170:60):season===2?(eventNow===2?90:22):0;
+  updateFireworks(dt);
+  if(bits.length<want&&Math.random()<dt*(eventNow>=0?26:7)){
+    bits.push({x:Math.random()*MAPX,y:Math.random()*MAPY,z:5+Math.random()*3,ph:Math.random()*6,s:season});
+  }
+  for(const b of bits){b.z-=dt*(b.s===3?.55:.4);b.ph+=dt*1.6;b.x+=dt*(.25+Math.sin(b.ph)*.4);b.y+=dt*(b.s===3?.05:.2)}
+  bits=bits.filter(b=>b.z>0&&b.x<MAPX&&b.y<MAPY);
+  if(G.L.onsen&&!reduced&&Math.random()<dt*2)steam.push({x:(G.L.onsen>=3?3+Math.random()*3:4.4),y:G.L.onsen>=3?27:25.2,z:G.L.onsen>=3?.2:2.2,l:3});
+  steam.forEach(s=>{s.l-=dt;s.z+=dt*.4;s.x+=dt*.1});steam=steam.filter(s=>s.l>0);
+  // kočka
+  if(cat){cat.life-=dt;if(cat.life<=0)cat=null}
+  else{catIn-=dt;if(catIn<=0){spawnCat();catIn=(75+Math.random()*80)*(G.L.cafe?.5:1)}}
+}
+let cat=null,catIn=45;
+function spawnCat(){
+  const spots=[[21,8],[24,7],[16,11.8],[23,11.6],[20,10],[6,5],[30,5.2],[14,5.2]];
+  const s=spots[Math.floor(Math.random()*spots.length)];
+  cat={x:s[0],y:s[1],z:s[1]>11?.5:0,life:30};
+}
+function drawCat(t){
+  const X=px(cat.x,cat.y),Y=py(cat.x,cat.y,cat.z),a=Math.sin(t*5)*.5;
+  c.fillStyle="rgba(15,20,30,.2)";c.beginPath();c.ellipse(X,Y,9,4,0,0,6.3);c.fill();
+  c.fillStyle="#fbfaf2";c.strokeStyle="#c9902a";c.lineWidth=1.2;
+  c.beginPath();c.roundRect(X-7,Y-14,14,14,6);c.fill();c.stroke();
+  c.beginPath();c.moveTo(X-8,Y-19);c.lineTo(X-6,Y-27);c.lineTo(X-1,Y-23);c.lineTo(X+1,Y-23);c.lineTo(X+6,Y-27);c.lineTo(X+8,Y-19);c.arc(X,Y-19,8,0,3.1416);c.closePath();c.fill();c.stroke();
+  c.fillStyle="#1c2a3f";c.beginPath();c.arc(X-3,Y-20,1.1,0,6.3);c.arc(X+3,Y-20,1.1,0,6.3);c.fill();
+  c.fillStyle="#cf4a33";c.fillRect(X-6,Y-13.5,12,2);
+  c.fillStyle="#e8b33a";c.beginPath();c.arc(X,Y-9,3,0,6.3);c.fill();
+  c.save();c.translate(X+7,Y-14);c.rotate(a-.5);c.fillStyle="#fbfaf2";c.beginPath();c.roundRect(-2,-9,5,10,2.4);c.fill();c.stroke();c.restore();
+  c.globalAlpha=.55+.45*Math.sin(t*3);c.fillStyle="#ffd868";c.beginPath();c.arc(X-11,Y-27,1.8,0,6.3);c.arc(X+13,Y-30,1.6,0,6.3);c.fill();c.globalAlpha=1;
+}
+function drawFx(){
+  for(const b of bits){
+    const X=px(b.x,b.y),Y=py(b.x,b.y,b.z);
+    c.fillStyle=b.s===0?"#f9c9d4":b.s===3?"#ffffff":"#dd8a3a";
+    c.beginPath();c.ellipse(X,Y,b.s===3?1.7:2.4,b.s===3?1.7:1.3,b.ph,0,6.3);c.fill();
+  }
+  for(const s of steam){c.fillStyle="rgba(255,255,255,"+(s.l/3*.32)+")";c.beginPath();c.arc(px(s.x,s.y),py(s.x,s.y,s.z),4+(3-s.l)*3,0,6.3);c.fill()}
+  c.textAlign="center";c.textBaseline="middle";
+  for(const f of floats){
+    c.globalAlpha=Math.min(1,f.life);
+    c.font='700 '+(f.big?17:14)+'px "Zen Kaku Gothic New",system-ui,sans-serif';
+    const X=px(f.x,f.y),Y=py(f.x,f.y,f.z);
+    c.lineWidth=3.5;c.strokeStyle="rgba(28,42,63,.85)";c.strokeText(f.txt,X,Y);
+    c.fillStyle=f.big?"#ffe08a":"#fff";c.fillText(f.txt,X,Y);
+  }
+  c.globalAlpha=1;
+}
+
+/* ─────────────── POZADÍ ─────────────── */
+const SKY_DAY=["#a9d4e6","#e6efe6"],SKY_NIGHT=["#2c3a68","#5c6894"],SKY_DUSK=["#7e7fb0","#f5bd96"];
+function drawBackdrop(w,h,t){
+  c.setTransform(dpr,0,0,dpr,0,0);
+  const dusk=(hour>16.5&&hour<20.5)?1-Math.abs(hour-18.5)/2:(hour>4&&hour<7.5)?1-Math.abs(hour-5.8)/1.7:0;
+  const skyA=mix(mix(SKY_DAY[0],SKY_DUSK[0],Math.max(0,dusk)),SKY_NIGHT[0],night);
+  const skyB=mix(mix(SKY_DAY[1],SKY_DUSK[1],Math.max(0,dusk)),SKY_NIGHT[1],night);
+  const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,skyA);g.addColorStop(.75,skyB);g.addColorStop(1,skyB);
+  c.fillStyle=g;c.fillRect(0,0,w,h);
+  // mraky
+  c.fillStyle="rgba(255,255,255,"+(.5*(1-night))+")";
+  for(let i=0;i<5;i++){const X=((t*5+i*360)%(w+300))-150,Y=30+i*33%140;c.beginPath();c.ellipse(X,Y,70,11,0,0,6.3);c.ellipse(X+34,Y-7,38,9,0,0,6.3);c.fill()}
+}
+function drawMountains(){
+  // hory za zadním rohem diorámy, ve světových pixelech
+  const far=mix("#8ea9c2","#2e3a60",night*.6),near=mix("#6f8f8c","#28344f",night*.6),cap=mix("#f6f8fa","#c9d1e0",night*.5);
+  c.fillStyle=far;c.beginPath();c.moveTo(-900,110);c.lineTo(-560,-40);c.lineTo(-360,30);c.lineTo(-90,-262);c.lineTo(250,40);c.lineTo(480,-40);c.lineTo(980,160);c.closePath();c.fill();
+  c.fillStyle=cap;c.beginPath();c.moveTo(-90,-262);c.lineTo(-27,-193);c.lineTo(-52,-200);c.lineTo(-76,-180);c.lineTo(-100,-200);c.lineTo(-125,-180);c.lineTo(-155,-192);c.closePath();c.fill();
+  c.fillStyle=near;c.beginPath();c.moveTo(-860,190);c.quadraticCurveTo(-520,-20,-260,70);c.quadraticCurveTo(0,-30,260,80);c.quadraticCurveTo(620,-10,980,200);c.closePath();c.fill();
+}
+
+/* ─────────────── KAMERA A SMYČKA ─────────────── */
+let dpr=1,W=0,H=0,cam={x:0,y:0,s:1,userS:1};
+function panelRoom(){const p=$("panel");if(p.classList.contains("closed"))return {r:0,b:0};if(innerWidth<=760)return {r:0,b:p.offsetHeight};return {r:p.offsetWidth+24,b:0}}
+function resize(){
+  dpr=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+}
+function viewBase(){
+  const room=panelRoom();
+  const vw=Math.max(200,W-room.r),vh=Math.max(160,H-room.b);
+  const topPad=vw<500?70:30;
+  const mapW=(MAPX+MAPY)*HW,mapH=(MAPX+MAPY)*HH+170;
+  const s=Math.min((vw-24)/mapW,(vh-topPad-24)/mapH);
+  const cx=(MAPX-MAPY)*HW/2,cy=((MAPX+MAPY)*HH)/2-40;
+  return {s,ox:vw/2-cx*s,oy:topPad+(vh-topPad)/2-cy*s};
+}
+let view={s:1,ox:0,oy:0};
+function computeView(){
+  const b=viewBase(),s=b.s*cam.userS;
+  const cx=(MAPX-MAPY)*HW/2,cy=((MAPX+MAPY)*HH)/2-40;
+  view={s,ox:b.ox+cam.x+cx*b.s-cx*s,oy:b.oy+cam.y+cy*b.s-cy*s};
+}
+let last=performance.now(),uiAcc=0,saveAcc=0,changed=false;
+function frame(now){
+  requestAnimationFrame(frame);
+  let dt=(now-last)/1000;last=now;
+  dt=Math.min(dt,.1);
+  step(dt,now/1000);
+  render(now/1000);
+  uiAcc+=dt;if(uiAcc>.25){uiAcc=0;updateUI()}
+  saveAcc+=dt;if(saveAcc>45){saveAcc=0;saveCloud()}
+}
+function step(dt,t){
+  const r=rates(G.L);
+  G.clock+=dt/DAY_LEN;
+  updatePalette();
+  G.waiting=Math.min(G.waiting+r.demand*(eventNow>=0?EVENT_BOOST:1)*dt,Math.max(40,r.cap*r.tracks*2));
+  updateTrains(dt);
+  gateBlink+=dt*1.3;
+  const lower=gateTarget&&!autos.some(inCrossing)?1:0;
+  gateClosed+=(lower-gateClosed)*Math.min(1,dt*2.2);
+  crossingBell(dt);
+  updateAutos(dt);
+  updatePeople(dt);
+  updateRiders(dt);
+  updateBus(dt);
+  updateCafeCats(dt);
+  updateFx(dt,t);
+  ambient(dt);
+}
+function render(t){
+  c=ctx;
+  drawBackdrop(W,H,t);
+  computeView();
+  const S=view.s*dpr;
+  c.setTransform(S,0,0,S,view.ox*dpr,view.oy*dpr);
+  drawMountains();
+  if(groundDirty)buildGround();
+  c.save();c.shadowColor="rgba(20,30,50,.3)";c.shadowBlur=30*S;c.shadowOffsetY=18*S;
+  c.drawImage(groundCanvas,GMINX,GMINY,GW,GH);c.restore();
+  Q=[];lights=[];
+  scene(t);drawTrains();drawAutos(t);drawPeople();drawRiders();drawBus();
+  if(cat)q(cat.x,cat.y,()=>drawCat(t),.1);
+  Q.sort((a,b)=>a.k-b.k);
+  for(const it of Q)it.fn();
+  // noční tónování
+  const dusk=(hour>16.5&&hour<20)?1-Math.abs(hour-18.2)/1.8:0;
+  if(night>.01||dusk>.01){
+    c.setTransform(1,0,0,1,0,0);
+    c.globalCompositeOperation="multiply";
+    c.fillStyle=mix(mix("#ffffff","#ffd9bb",Math.max(0,dusk)),"#8089bd",night);
+    c.fillRect(0,0,cv.width,cv.height);
+    c.globalCompositeOperation="source-over";
+    c.setTransform(S,0,0,S,view.ox*dpr,view.oy*dpr);
+  }
+  if(night>.05&&lights.length){
+    c.globalCompositeOperation="lighter";
+    const na=Math.min(1,night*1.2);
+    for(let i=0;i<lights.length;i+=4){
+      const r=lights[i+2]*44;c.globalAlpha=lights[i+3]*na;
+      c.drawImage(glow,lights[i]-r,lights[i+1]-r,r*2,r*2);
+    }
+    c.globalAlpha=1;c.globalCompositeOperation="source-over";
+  }
+  drawFireworks();
+  drawFx();
+}
+const glow=(()=>{const g=document.createElement("canvas");g.width=g.height=64;const x=g.getContext("2d"),r=x.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,"rgba(255,214,130,.85)");r.addColorStop(.35,"rgba(255,190,100,.28)");r.addColorStop(1,"rgba(255,170,80,0)");x.fillStyle=r;x.fillRect(0,0,64,64);return g})();
+
+/* ─────────────── ZVUK ─────────────── */
+let AC=null,soundOn=false,ambAcc=4,gateSnd=0;
+function note(f,t0,dur,vol,type="sine"){
+  if(!AC||!soundOn)return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.value=f;
+  const n=AC.currentTime+t0;
+  g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(vol,n+.015);g.gain.exponentialRampToValueAtTime(.0001,n+dur);
+  o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+dur+.05);
+}
+const SCALE=[293.66,329.63,392,440,493.88,587.33,659.25,783.99];
+function melody(){ // vlastní krátká odjezdová znělka
+  [5,4,3,5,6,7,5].forEach((d,i)=>note(SCALE[d],i*.24,.9,.05,"triangle"));
+}
+function doorSound(){note(880,0,.25,.018);note(660,.18,.3,.018)}
+function ambient(dt){
+  if(!soundOn)return;
+  ambAcc-=dt;
+  if(ambAcc<=0){
+    ambAcc=2.5+Math.random()*5;
+    const n=1+Math.floor(Math.random()*3);
+    let d=Math.floor(Math.random()*5);
+    for(let i=0;i<n;i++){note(SCALE[d]/2,i*.42,2.4,.035,"triangle");d=(d+[1,2,-1,3][Math.floor(Math.random()*4)]+8)%8}
+  }
+}
+function crossingBell(dt){
+  if(!soundOn||!gateTarget)return;
+  gateSnd-=dt;
+  if(gateSnd<=0){gateSnd=.6;note(1180,0,.25,.008,"square")}
+}
+
+/* ─────────────── ROZHRANÍ ─────────────── */
+let tab=0;
+const RANKS=[[0,"Venkovská zastávka"],[8,"Malá stanice"],[20,"Městská stanice"],[34,"Rušný uzel"],[48,"Hlavní stanice údolí"],[1e9,""]];
+const MAXSUM=UPG.reduce((a,u)=>a+u.max,0);
+function buildTabs(){
+  const el=$("tabs");el.innerHTML="";
+  TABS.forEach((n,i)=>{
+    const b=document.createElement("button");b.type="button";b.id="tab"+i;b.setAttribute("role","tab");
+    b.setAttribute("aria-selected",i===tab);
+    b.innerHTML=n+'<span class="dot"></span>';
+    b.onclick=()=>{tab=i;buildTabs();renderList()};
+    el.appendChild(b);
+  });
+}
+const rowsEl={};
+function renderList(){
+  const el=$("list");el.innerHTML="";
+  for(const k in rowsEl)delete rowsEl[k];
+  UPG.filter(u=>u.tab===tab).sort((a,b)=>{const am=G.L[a.id]>=a.max,bm=G.L[b.id]>=b.max;if(am!==bm)return am-bm;return costOf(a,G.L[a.id])-costOf(b,G.L[b.id])}).forEach(u=>{
+    const d=document.createElement("article");d.className="tk";
+    const h=document.createElement("h3");h.textContent=u.name;const s=document.createElement("span");s.textContent=u.jp;h.appendChild(s);
+    const p=document.createElement("p");
+    const pips=document.createElement("div");pips.className="pips";
+    if(u.max>1)for(let i=0;i<u.max;i++)pips.appendChild(document.createElement("i"));
+    const b=document.createElement("button");b.type="button";b.id="buy-"+u.id;
+    b.onclick=()=>buy(u);
+    d.append(h,p,pips,b);el.appendChild(d);
+    rowsEl[u.id]={d,p,pips,b};
+  });
+  updateUI();
+}
+function buy(u){
+  const l=G.L[u.id];
+  if(l>=u.max||u.req&&!u.req(G.L))return;
+  const co=costOf(u,l);
+  if(G.money<co)return;
+  G.money-=co;G.L[u.id]=l+1;
+  groundDirty=true;
+  floats.push({x:u.at[0],y:u.at[1],z:2.4,txt:u.name,life:2.8});
+  blip();
+  renderList();saveCloud();
+  if(Object.values(G.L).reduce((a,b)=>a+b,0)===MAXSUM)toast("Hotovo: stanice Komorebi je kompletní. Sedni si a dívej se na vlaky.",7000);
+}
+function blip(){note(587.33,0,.5,.05,"triangle");note(880,.09,.7,.04,"triangle")}
+function hintText(r){
+  if(G.L.tracks===0&&G.total<300)return "Stanice vydělává sama. Kupuj, co se ti líbí, nebo se jen dívej.";
+  if(r.capRate<r.demand*.9){
+    if(G.L.cars<UPGMAP.cars.max)return "Na peronu čeká víc lidí, než vlaky stačí odvézt. Pomohou delší soupravy nebo hustší jízdní řád.";
+    return "Na peronu čeká víc lidí, než vlaky stačí odvézt. Pomůže další kolej nebo častější vlaky.";
+  }
+  if(r.demand<r.capRate*.5)return "Vlaky jezdí poloprázdné. Víc cestujících přivedou nové domy a obchody v okolí.";
+  return "Vlaky i cestující jsou v rovnováze. Vyber si, co se ti líbí.";
+}
+function updateUI(){
+  const r=rates(G.L),m=G.money;
+  $("money").textContent=yen(m);
+  const flowNow=Math.min(r.demand*(eventNow>=0?EVENT_BOOST:1),r.capRate);
+  $("rate").textContent="≈ "+yen(flowNow*(r.fare+r.spend)*60)+" za minutu";
+  const sum=Object.values(G.L).reduce((a,b)=>a+b,0);
+  let rank=RANKS[0][1];for(const [n,t] of RANKS)if(sum>=n&&t)rank=t;
+  $("rank").textContent=rank+" · "+sum+" z "+MAXSUM+" vylepšení";
+  const hh=Math.floor(hour),mm=Math.floor((hour%1)*60);
+  $("clock").textContent=seasonName+" · "+hh+":"+String(mm).padStart(2,"0");
+  $("waitChip").textContent="Na peronu "+Math.floor(G.waiting);
+  const ec=$("eventChip");
+  ec.hidden=eventNow<0;
+  if(eventNow>=0){const e=EVENTS[eventNow],t=e.jp+" "+e.name+" · +30 % lidí";if(ec.textContent!==t)ec.textContent=t}
+  $("totals").textContent="Přepraveno "+nf.format(Math.floor(G.pax))+" lidí";
+  $("hint").textContent=hintText(r);
+  let total=0;const per=[0,0,0];
+  UPG.forEach(u=>{const l=G.L[u.id];if(l<u.max&&(!u.req||u.req(G.L))&&m>=costOf(u,l)){per[u.tab]++;total++}});
+  TABS.forEach((_,i)=>{const d=document.querySelector("#tab"+i+" .dot");if(d)d.textContent=per[i]||""});
+  $("openCount").textContent=total?" "+total:"";
+  for(const id in rowsEl){
+    const u=UPGMAP[id],e=rowsEl[id],l=G.L[id],max=l>=u.max;
+    e.d.classList.toggle("maxed",max);
+    const lock=u.req&&!u.req(G.L);
+    const txt=lock?u.reqText:u.desc;
+    if(e.p.textContent!==txt)e.p.textContent=txt;
+    [...e.pips.children].forEach((x,i)=>x.classList.toggle("on",i<l));
+    const label=max?"Hotovo":lock?"Zamčeno":yen(costOf(u,l));
+    if(e.b.textContent!==label)e.b.textContent=label;
+    e.b.disabled=max||lock||m<costOf(u,l);
+  }
+}
+
+/* ovládání kamery a klepnutí */
+const pts=new Map();let dragDist=0,pinch=0;
+cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.offsetX,e.offsetY]);dragDist=0;pinch=0});
+cv.addEventListener("pointermove",e=>{
+  if(!pts.has(e.pointerId))return;
+  const old=pts.get(e.pointerId),dx=e.offsetX-old[0],dy=e.offsetY-old[1];
+  pts.set(e.pointerId,[e.offsetX,e.offsetY]);
+  if(pts.size===1){cam.x+=dx;cam.y+=dy;dragDist+=Math.abs(dx)+Math.abs(dy);clampCam()}
+  else if(pts.size===2){
+    const [a,b]=[...pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);
+    if(pinch)zoomBy(d/pinch);
+    pinch=d;dragDist+=10;
+  }
+});
+function endPtr(e){
+  if(pts.has(e.pointerId)&&pts.size===1&&dragDist<8)tap(e.offsetX,e.offsetY);
+  pts.delete(e.pointerId);if(pts.size<2)pinch=0;
+}
+cv.addEventListener("pointerup",endPtr);cv.addEventListener("pointercancel",e=>pts.delete(e.pointerId));
+cv.addEventListener("wheel",e=>{e.preventDefault();zoomBy(Math.exp(-e.deltaY*.0012))},{passive:false});
+function zoomBy(f){cam.userS=Math.max(1,Math.min(3.2,cam.userS*f));clampCam()}
+function clampCam(){const lim=(cam.userS-1)*Math.max(W,H)*.55+70;cam.x=Math.max(-lim,Math.min(lim,cam.x));cam.y=Math.max(-lim,Math.min(lim,cam.y))}
+function tap(sx,sy){
+  const X=(sx-view.ox)/view.s,Y=(sy-view.oy)/view.s;
+  for(const a of autos){
+    if(a.m!=="hayate"||a.claimed||a.y<.9||a.y>MAPY-.9)continue;
+    if(Math.hypot(X-px(a.lane,a.y),Y-py(a.lane,a.y,.5))<Math.max(34,24/view.s)){
+      a.claimed=true;
+      const gain=Math.max(2500,Math.round(rates(G.L).perMin*.75));
+      G.money+=gain;G.total+=gain;
+      floats.push({x:a.lane,y:a.y,z:1.8,txt:"+"+yen(gain),life:2.6,big:true});
+      toast("Řidič sporťáku Hayate nechal na stanici spropitné "+yen(gain)+".");
+      blip();return;
+    }
+  }
+  if(G.L.cafe){
+    const hit=cafeCats.find(k=>Math.hypot(X-px(k.x,k.y),Y-(py(k.x,k.y)-4))<Math.max(13,14/view.s));
+    if(hit){floats.push({x:hit.x,y:hit.y,z:.7,txt:"♥",life:1.5});meow();return}
+  }
+  if(!cat)return;
+  const cx=px(cat.x,cat.y),cy=py(cat.x,cat.y,cat.z)-14;
+  if(Math.hypot(X-cx,Y-cy)<Math.max(26,20/view.s)){
+    const r=rates(G.L),gain=Math.max(1000,Math.round(r.perMin*(G.L.cafe?.75:.5)));
+    G.money+=gain;G.total+=gain;
+    floats.push({x:cat.x,y:cat.y,z:cat.z+1.5,txt:"+"+yen(gain),life:2.6,big:true});
+    toast("Kočka štěstí maneki-neko ti přinesla "+yen(gain)+".");
+    blip();cat=null;
+  }
+}
+$("closePanel").onclick=()=>{$("panel").classList.add("closed");$("panel").setAttribute("aria-hidden","true");$("openPanel").hidden=false};
+$("openPanel").onclick=()=>{$("panel").classList.remove("closed");$("panel").removeAttribute("aria-hidden");$("openPanel").hidden=true};
+$("zoomIn").onclick=()=>zoomBy(1.3);$("zoomOut").onclick=()=>zoomBy(1/1.3);
+$("soundBtn").onclick=()=>{
+  soundOn=!soundOn;
+  if(soundOn&&!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+  if(AC&&AC.state==="suspended")AC.resume();
+  $("soundBtn").textContent=soundOn?"Vypnout zvuk":"Zapnout zvuk";
+  if(soundOn)melody();
+};
+function seedStart(){ // první lidé už čekají na peronu
+  for(let i=0;i<5;i++){const p=newPerson(9+Math.random()*16,11.3+Math.random()*.8,.5);p.plat="A";p.state="wait";people.push(p)}
+}
+function resetGame(){
+  G={L:blankL(),money:600,total:0,pax:0,clock:.3,savedAt:Date.now(),waiting:5};
+  fw=[];people=[];riders=[];floats=[];bits=[];steam=[];cafeCats=[];cat=null;catIn=45;visAcc=0;riderIn=2;
+  zebraBusy={};zebraBusyT=0;zebraCool=0;
+  bus.phase="off";bus.idle=7;bus.x=44;bus.v=0;bus.did=false;bus.yieldT=0;busCross=false;
+  sportOut=false;sportIn=50+Math.random()*30;
+  kazeIn=200+Math.random()*100;hoshiIn=240+Math.random()*120;
+  autos.forEach(a=>{if(a.m==="hayate")pickCar(a);a.commit=false});
+  trains.forEach((t,i)=>{t.phase="wait";t.t=0;t.x=-30;t.sp=null;t.dir=i%2?-1:1;t.wait=i===0?2.5:6+i*5.5});
+  seedStart();
+  groundDirty=true;tab=0;buildTabs();renderList();saveCloud();
+  toast("Hra začíná znovu od první zastávky.",3500);
+}
+function wireReset(){
+  const w=$("resetWrap");
+  w.innerHTML='<button id="resetBtn" class="resetMain" type="button">Reset hry</button>';
+  $("resetBtn").onclick=()=>{
+    w.innerHTML='<span class="resetAsk">Smazat všechna vylepšení a peníze?</span> <button id="resetYes" class="danger" type="button">Ano, resetovat</button> <button id="resetNo" type="button">Zrušit</button>';
+    $("resetNo").onclick=wireReset;
+    $("resetNo").focus();
+    $("resetYes").onclick=()=>{resetGame();wireReset()};
+  };
+}
+addEventListener("pagehide",writeLocal);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)saveCloud()});
+
+/* ─────────────── START ─────────────── */
+function start(data){
+  const hotSave=data&&data.save;
+  const local=readLocal();
+  const s=hotSave||local;
+  if(s)applySave(s);
+  if(!s){
+    seedStart();
+    toast("Vítej v Komorebi. První vlak už přijíždí.",4000);
+  }
+  resize();updatePalette();uiReady=true;buildTabs();renderList();wireReset();
+  new ResizeObserver(()=>resize()).observe(document.body);
+  requestAnimationFrame(frame);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{groundDirty=true});
+}
+start({});
+})();
+</script>
+</body>
+</html>
