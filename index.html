@@ -1316,8 +1316,9 @@ function scene(t){
   if(L.elec){
     for(let x=2;x<40;x+=6.2){
       if(x>32.4&&x<35.6)continue;
-      q(x,12.6,()=>{box(x-.05,12.55,0,.1,.1,2.5,"#6d7782");const last=TRACKY[n-1]+.4;
-      poly([x,12.6,2.4,x,last,2.4,x,last,2.33,x,12.6,2.33],"#59636e")},800);
+      // sloup stojí za první kolejí: řadí se před vlaky, nad koleje jde jen výložník
+      q(x,12.45,()=>box(x-.05,12.55,0,.1,.1,2.5,"#6d7782"));
+      q(x,12.6,()=>{const last=TRACKY[n-1]+.4;poly([x,12.6,2.4,x,last,2.4,x,last,2.33,x,12.6,2.33],"#59636e")},800);
     }
     for(let t=0;t<n;t++){const Y=TRACKY[t];q(20,Y,()=>{c.strokeStyle="rgba(40,48,60,.65)";c.lineWidth=.8;c.beginPath();c.moveTo(px(0,Y),py(0,Y,2.28));c.lineTo(px(MAPX,Y),py(MAPX,Y,2.28));c.stroke()},900)}
   }
@@ -1421,7 +1422,7 @@ function arrive(t,r){
     const p=newPerson(x,edge,.5);p.delay=.4+i*.22;p.path=exitPath(plat,x,edge);p.state="walk";p.i=0;people.push(p);
   }
 }
-function doorX(t,x){const n=1+G.L.cars,x0=t.x-t.len/2;const k=Math.floor((x-x0)/(CAR+GAP)*2);return x0+(k+.5)*(CAR+GAP)/2}
+function doorX(t,x){const n=1+G.L.cars,x0=t.x-t.len/2;const k=Math.max(0,Math.min(n*2-1,Math.floor((x-x0)/(CAR+GAP)*2)));return x0+(k+.5)*(CAR+GAP)/2}
 function drawTrains(){
   const r=rates(G.L);
   for(const t of trains){
@@ -1825,13 +1826,15 @@ const DOOR={x:15.05,y:11.1,z:.5};
 function pathToPlat(plat){
   const r=Math.random;
   const pts=[];
-  if(plat==="A"){pts.push({x:6+r()*22,y:11.3+r()*.8,z:.5});return pts}
+  if(plat==="A"){pts.push({x:waitX(plat),y:11.3+r()*.8,z:.5});return pts}
   const y=plat==="I"?16.25:20.75;
   pts.push({x:10.95,y:11.75,z:.5},{x:8.6,y:11.75,z:2.6},{x:8.1,y:11.75,z:2.6},{x:8.1,y,z:2.6},{x:8.6,y,z:2.6},{x:10.95,y,z:.5});
   const sy=plat==="I"?15.85+r()*.8:20.35+r()*.8;
-  pts.push({x:11.3+r()*17,y:sy,z:.5});
+  pts.push({x:waitX(plat),y:sy,z:.5});
   return pts;
 }
+// lidé čekají jen tam, kde zastaví vozy, ne na prázdném konci nástupiště
+function waitX(plat){const L=trainLen(),lo=Math.max(plat==="A"?6:11.3,STOPX-L/2+.5),hi=Math.min(28.3,STOPX+L/2-.5);return lo+Math.random()*Math.max(.5,hi-lo)}
 function exitPath(plat,x,y){
   const pts=[];
   if(plat!=="A"){
@@ -2338,7 +2341,7 @@ $("soundBtn").onclick=()=>{
   if(soundOn)melody();
 };
 function seedStart(){ // první lidé už čekají na peronu
-  for(let i=0;i<5;i++){const p=newPerson(9+Math.random()*16,11.3+Math.random()*.8,.5);p.plat="A";p.state="wait";people.push(p)}
+  for(let i=0;i<5;i++){const p=newPerson(waitX("A"),11.3+Math.random()*.8,.5);p.plat="A";p.state="wait";people.push(p)}
 }
 function resetGame(){
   G={L:blankL(),money:600,total:0,pax:0,clock:.3,savedAt:Date.now(),waiting:5};
