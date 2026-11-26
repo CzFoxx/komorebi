@@ -660,7 +660,7 @@ function buildGround(){
   top(0,4,0,MAPX,1.8,asphalt);
   top(33,0,0,2,MAPY,asphalt);
   for(let x=1;x<MAPX;x+=2.2){if(x>31.3&&x<36.2)continue;top(x,4.87,0,1.1,.06,lineC)}
-  for(let y=1;y<MAPY;y+=2.2){if(y>1.8&&y<7||y+1.1>11.9&&y<TRACKY[G.L.tracks]+1.2||G.L.south&&y>33&&y<36.5)continue;top(33.97,y,0,.06,1.1,lineC)}
+  for(let y=1;y<MAPY;y+=2.2){if(y>1.8&&y<7||y+1.1>11.9&&y<TRACKY[G.L.tracks]+1.2||G.L.south&&y+1.1>32.8&&y<36.5)continue;top(33.97,y,0,.06,1.1,lineC)}
   // přechod pro chodce u křižovatky
   for(const y of [5.97,3.11])for(let x=33.08;x<34.9;x+=.34)top(x,y,.005,.18,.72,lineC); // přes silnici
   for(const x of [32.12,35.13])for(let y=4.08;y<5.7;y+=.34)top(x,y,.005,.75,.18,lineC); // přes ulici
@@ -2041,7 +2041,7 @@ function updateAutos(dt){
     if(zebraBusy.N&&dn>=0)target=Math.min(target,dn*2.2);
     const db=a.dir>0?3.85-a.y:a.y-7.6;
     if(busCross&&db>=0)target=Math.min(target,db*2.2);
-    const dh=a.dir>0?33-a.y:a.y-36.8;
+    const dh=a.dir>0?31.9-a.y:a.y-37.4;
     if(hubCross&&dh>=0)target=Math.min(target,dh*2.2);
     a.v+=(target-a.v)*Math.min(1,dt*(target<a.v?6:1.4));
     let ny=a.y+a.dir*a.v*dt;
@@ -2049,7 +2049,7 @@ function updateAutos(dt){
     if(zebraBusy.S&&dz>=0)ny=a.dir>0?Math.min(ny,zStopN):Math.max(ny,zStopS);
     if(zebraBusy.N&&dn>=0)ny=a.dir>0?Math.min(ny,z2StopN):Math.max(ny,z2StopS);
     if(busCross&&db>=0)ny=a.dir>0?Math.min(ny,3.85):Math.max(ny,7.6);
-    if(hubCross&&dh>=0)ny=a.dir>0?Math.min(ny,33):Math.max(ny,36.8);
+    if(hubCross&&dh>=0)ny=a.dir>0?Math.min(ny,31.9):Math.max(ny,37.4);
     a.y=ny;
     if(a.dir>0&&a.y>MAPY+3||a.dir<0&&a.y<-3)respawnAuto(a);
   }
@@ -2991,6 +2991,9 @@ function hubGround(g){
   {const sY=TRACKY[G.L.tracks]+.95;seg(32.5,sY,.5,33.6-sY);seg(35,sY,.5,33.6-sY)} // chodníky začínají hned za přejezdem
   // přechody pro chodce přes jižní ulici u křižovatky
   for(const x0 of [32.05,35.2])for(let y=34.08;y<35.7;y+=.34)top(x0,y,.006,.75,.18,lineC);
+  // přechody přes silnici k přejezdu z obou stran ulice (jako u severní křižovatky) a stopčára před severním
+  for(const y0 of [32.88,35.88])for(let x=33.08;x<34.9;x+=.34)top(x,y0,.006,.18,.64,lineC);
+  top(34,32.74,.006,1,.05,lineC);
   // pozemek a parkoviště konbini
   if(L.konbini){
     top(35.5,28.2,.004,4.5,5.4,mix("#b3b1aa","#e2e4e4",snow*.6));
@@ -3151,7 +3154,7 @@ function updateHub(dt){
       if(!b.go&&front>30.4){
         target=Math.min(3,Math.max(0,(32.3-front)*2));
         if(front>31.4)b.req=true;
-        if(b.req&&autos.every(a=>!(a.y>33.001&&a.y<36.799)))b.go=true;
+        if(b.req&&autos.every(a=>!(a.y>31.901&&a.y<37.399)))b.go=true;
       }
       if((b.req||b.go)&&b.x-BUS_LEN/2<35.9)hubCross=true;
       if(b.x>MAPX+5){b.phase="off";b.go=false;b.req=false;b.idle=(14+Math.random()*10)*(1-.08*L.takt)}
@@ -3165,7 +3168,7 @@ function updateHub(dt){
   updateHubCars(dt);
 }
 // auta na jižní ulici: u křižovatky si stejně jako autobusy řeknou o přednost
-const junctionFree=()=>autos.every(a=>!(a.y>33.001&&a.y<36.799));
+const junctionFree=()=>autos.every(a=>!(a.y>31.901&&a.y<37.399));
 function updateHubCars(dt){
   const L=G.L;
   for(const a of hubCars){
