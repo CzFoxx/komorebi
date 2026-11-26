@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Stanice Komorebi</title>
-<meta name="description" content="Relaxační izometrická hra: rozvíjej malou japonskou železniční stanici v rušný uzel.">
+<meta name="description" content="Izometrická hra o japonském nádraží: vybuduj z venkovské zastávky rušnou stanici a přestupní uzel celého údolí.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f8a78'/%3E%3Crect x='7' y='6' width='18' height='17' rx='3' fill='%23fbfcfa'/%3E%3Crect x='10' y='9' width='12' height='6' fill='%231c2a3f'/%3E%3Ccircle cx='11' cy='19' r='1.6' fill='%23cf4a33'/%3E%3Ccircle cx='21' cy='19' r='1.6' fill='%23cf4a33'/%3E%3Cpath d='M10 23l-3 4M22 23l3 4' stroke='%23fbfcfa' stroke-width='2'/%3E%3C/svg%3E">
 <style>
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -13,7 +13,7 @@ img{max-width:100%}
 [hidden]{display:none!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@700;900&family=Nunito:wght@700;800;900&display=swap">
 <style>
 /* Layout: celoobrazovková izometrická dioráma; ovládání vypadá jako japonské nádražní cedule (ekimeihyó) a papírové jízdenky. */
 :root{
@@ -56,8 +56,15 @@ button.chip:hover{background:var(--ink)}
 #panelHead{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 8px 14px;gap:8px}
 #panelHead h2{font-family:var(--disp);font-weight:800;font-size:1.15rem;margin:0}
 #closePanel{background:none;border:0;cursor:pointer;font-size:.8rem;color:var(--ink-soft);padding:4px 6px}
-#tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:3px solid var(--line)}
+#tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:3px solid var(--line)}
 #tabs button{background:none;border:0;padding:8px 2px;font-size:.86rem;font-weight:500;cursor:pointer;color:var(--ink-soft);position:relative}
+.hubStat ul.hubReq{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.hubStat ul.hubReq li{padding-left:22px;position:relative;color:var(--ink-soft)}
+.hubStat ul.hubReq li::before{content:"";position:absolute;left:2px;top:3px;width:12px;height:12px;border-radius:3px;border:2px solid var(--mute);box-sizing:border-box}
+.hubStat ul.hubReq li.ok{color:var(--ink)}
+.hubStat ul.hubReq li.ok::before{background:var(--line);border-color:var(--line)}
+.hubStat ul.hubReq li.ok::after{content:"";position:absolute;left:5px;top:5px;width:4px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg)}
+#tabs button.locked{opacity:.55}
 #tabs button[aria-selected="true"]{background:var(--line);color:#fff;font-weight:700}
 #tabs .dot{display:inline-block;min-width:1.25em;margin-left:4px;font-size:.68rem;line-height:1.25em;background:var(--gold);color:#fff;border-radius:9px;font-variant-numeric:tabular-nums}
 #tabs .dot:empty{display:none}
@@ -78,6 +85,8 @@ button.chip:hover{background:var(--ink)}
 #panelFoot button{background:none;border:0;padding:2px 0;font-size:.74rem;color:var(--ink-soft);text-decoration:underline;cursor:pointer}
 #panelFoot button.danger{color:#fff;background:var(--vermilion);font-weight:700;text-decoration:none;padding:5px 9px;border-radius:3px}
 #panelFoot button.resetMain{color:var(--vermilion);border:1px solid var(--vermilion);text-decoration:none;font-weight:700;padding:4px 9px;border-radius:3px}
+#panelFoot button.menuMain{color:#fff;background:var(--line);text-decoration:none;font-weight:700;padding:5px 14px;border-radius:3px}
+#panelFoot button.menuMain:hover{background:var(--line-deep)}
 #panelFoot .resetAsk{color:var(--ink);font-weight:500}
 #resetWrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #openPanel{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--line);color:#fff;border:0;border-radius:3px;padding:11px 16px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 14px rgba(28,42,63,.3)}
@@ -86,6 +95,13 @@ button.chip:hover{background:var(--ink)}
 #toast{position:absolute;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 14px;border-radius:3px;font-size:.84rem;max-width:min(420px,calc(100% - 32px));line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.25);text-align:center;pointer-events:none;transition:opacity .4s;opacity:0;z-index:5}
 #toast.on{opacity:1}
 
+.tk p b.gain{color:var(--line-deep);font-weight:700;white-space:nowrap}
+.hubStat{background:#fff;border:1px solid var(--ticket-edge);border-left:5px solid var(--gold);border-radius:3px;padding:9px 11px;font-size:.8rem;line-height:1.4}
+.hubStat .big{font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.hubStat .meter{height:8px;background:#e3e9e6;border-radius:4px;overflow:hidden;margin:5px 0 6px}
+.hubStat .meter i{display:block;height:100%;background:var(--gold)}
+.hubStat dl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:0;font-variant-numeric:tabular-nums}
+.hubStat dt{color:var(--ink-soft)}.hubStat dd{margin:0;text-align:right;font-weight:500}
 @media (max-width:760px){
   #sign .kanji{font-size:1.25rem}
   #sign .top{padding:6px 12px 3px}
@@ -120,7 +136,7 @@ button.chip:hover{background:var(--ink)}
   <div id="tabs" role="tablist"></div>
   <div id="hint"></div>
   <div id="list"></div>
-  <div id="panelFoot"><span id="totals"></span><span id="resetWrap"><button id="resetBtn" class="resetMain" type="button">Reset hry</button></span></div>
+  <div id="panelFoot"><span id="totals"></span><span id="resetWrap"><button id="menuBtn" class="menuMain" type="button">Menu</button></span></div>
 </aside>
 <div id="status">
   <span class="chip" id="clock"></span>
@@ -133,6 +149,296 @@ button.chip:hover{background:var(--ink)}
 <button id="openPanel" type="button" hidden>Investice<b id="openCount"></b></button>
 <div id="toast" role="status"></div>
 
+<svg width="0" height="0" style="position:absolute;width:0;height:0" aria-hidden="true"><defs>
+  <linearGradient id="tSky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#9fc8ea"/><stop offset=".38" stop-color="#f6c6d2"/><stop offset=".62" stop-color="#ffd9a8"/><stop offset="1" stop-color="#fff0cf"/>
+  </linearGradient>
+  <radialGradient id="tSun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff9e6"/><stop offset=".45" stop-color="#ffe6a8"/><stop offset="1" stop-color="#ffd59a" stop-opacity="0"/></radialGradient>
+  <linearGradient id="tPlat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efe8ef"/><stop offset="1" stop-color="#d9cfdc"/></linearGradient>
+  <linearGradient id="tGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3d4f75"/><stop offset="1" stop-color="#26324f"/></linearGradient>
+  <radialGradient id="tIris" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#5fb8a8"/><stop offset=".6" stop-color="#2f6f78"/><stop offset="1" stop-color="#1f3346"/></radialGradient>
+  <g id="tBloom"><circle cx="0" cy="-9" r="8"/><circle cx="8.6" cy="-2.8" r="8"/><circle cx="5.3" cy="7.3" r="8"/><circle cx="-5.3" cy="7.3" r="8"/><circle cx="-8.6" cy="-2.8" r="8"/></g>
+</defs></svg>
+<style>
+/* Úvodní obrazovka: kawaii plakát s menu, vypadá jako nálepky s tlustým obrysem */
+#title{position:fixed;inset:0;z-index:30;overflow:hidden;background:#f6c6d2;font-family:"Nunito","Zen Maru Gothic","Zen Kaku Gothic New",system-ui,sans-serif;color:#3b2b3a}
+#title[hidden]{display:none}
+#titleArt{position:absolute;inset:0;width:100%;height:100%}
+#titleArt .tBlink{transform-origin:1165px 440px;animation:tBlink 5.2s infinite}
+#titleArt .tBlinkG{transform-origin:770px 498px;animation:tBlink 4.3s 1.2s infinite}
+#titleArt .tWave{transform-origin:826px 592px;animation:tWave 2.4s ease-in-out infinite}
+#titleArt .tPaw{transform-origin:944px 760px;animation:tPaw 1.6s ease-in-out infinite}
+#titleArt .tTail{transform-origin:1060px 836px;animation:tTail 3s ease-in-out infinite}
+@keyframes tBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+@keyframes tWave{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(7deg)}}
+@keyframes tPaw{0%,100%{transform:rotate(0)}50%{transform:rotate(14deg)}}
+@keyframes tTail{0%,100%{transform:rotate(0)}50%{transform:rotate(-7deg)}}
+#tPetals{position:absolute;inset:0;pointer-events:none}
+#tPetals i{position:absolute;top:-30px;width:14px;height:10px;border-radius:70% 0 70% 0;background:#ffc3d2;box-shadow:inset -2px -2px 0 #f39ab4;animation:tFall linear infinite}
+@keyframes tFall{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(-60px,55vh) rotate(200deg)}100%{transform:translate(20px,110vh) rotate(420deg)}}
+.tLogo{position:absolute;left:max(5vw,24px);top:max(5vh,20px);max-width:min(560px,90vw)}
+.tLogo .pill{display:inline-block;background:#ff8fb0;color:#fff;font-weight:900;font-size:clamp(14px,1.5vw,20px);padding:6px 16px;border-radius:999px;border:3px solid #3b2b3a;box-shadow:0 4px 0 #3b2b3a;letter-spacing:.06em;transform:rotate(-3deg)}
+.tLogo h1{margin:12px 0 6px;font-weight:900;font-size:clamp(46px,7vw,104px);line-height:.95;color:#fff;letter-spacing:.01em;
+  text-shadow:4px 0 0 #1f8a78,-4px 0 0 #1f8a78,0 4px 0 #1f8a78,0 -4px 0 #1f8a78,3px 3px 0 #1f8a78,-3px 3px 0 #1f8a78,3px -3px 0 #1f8a78,-3px -3px 0 #1f8a78,8px 10px 0 #3b2b3a}
+.tLogo h1 span{color:#fff3b0}
+.tLogo p{margin:10px 0 0;font-weight:700;font-size:clamp(14px,1.4vw,19px);color:#3b2b3a;background:rgba(255,255,255,.7);display:inline-block;padding:4px 12px;border-radius:999px}
+.tMenu{position:absolute;left:max(5vw,24px);top:calc(max(5vh,20px) + clamp(250px,30vw,370px));width:min(340px,86vw);display:flex;flex-direction:column;gap:14px}
+.tMenu button{font:inherit;font-weight:900;font-size:clamp(18px,1.7vw,22px);color:#3b2b3a;background:#fffaf4;border:4px solid #3b2b3a;border-radius:999px;padding:12px 22px;box-shadow:0 6px 0 #3b2b3a;cursor:pointer;text-align:left;display:flex;flex-direction:column;transition:transform .08s,box-shadow .08s}
+.tMenu button small{font-weight:700;font-size:13px;color:#6b5a6e;margin-top:2px}
+.tMenu button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 0 #3b2b3a}
+.tMenu button:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 #3b2b3a}
+.tMenu button:focus-visible{outline:4px solid #ff8fb0;outline-offset:3px}
+.tMenu button.primary{background:#1f8a78;color:#fff}
+.tMenu button.primary small{color:#d9f3ec}
+.tMenu button:disabled{opacity:.55;cursor:default}
+#tConfirm{background:#fffaf4;border:4px solid #3b2b3a;border-radius:22px;padding:12px 16px;font-weight:700;font-size:15px;line-height:1.35;box-shadow:0 6px 0 #3b2b3a}
+#tConfirm[hidden]{display:none}
+#tConfirm div{display:flex;gap:8px;margin-top:10px}
+#tConfirm button{font-size:15px;padding:8px 14px;box-shadow:0 4px 0 #3b2b3a;align-items:center}
+#tConfirm button.warn{background:#cf4a33;color:#fff}
+#tHelpBox{position:absolute;inset:0;display:grid;place-items:center;background:rgba(59,43,58,.35);padding:16px}
+#tHelpBox[hidden]{display:none}
+#tHelpBox .card{background:#fffaf4;border:4px solid #3b2b3a;border-radius:26px;box-shadow:0 8px 0 #3b2b3a;max-width:560px;width:100%;max-height:calc(100vh - 40px);overflow:auto;padding:20px 24px}
+#tHelpBox h2{margin:0 0 10px;font-weight:900;font-size:26px;color:#1f8a78}
+#tHelpBox ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:15.5px;line-height:1.45;font-family:"Zen Kaku Gothic New",system-ui,sans-serif}
+#tHelpBox li{padding-left:30px;position:relative}
+#tHelpBox li::before{content:"";position:absolute;left:4px;top:4px;width:16px;height:16px;border-radius:50%;background:#ff8fb0;border:3px solid #3b2b3a;box-sizing:border-box}
+#tHelpBox li b{color:#1f8a78}
+#tHelpBox .card>button{margin-top:16px;font:inherit;font-weight:900;font-size:17px;background:#1f8a78;color:#fff;border:4px solid #3b2b3a;border-radius:999px;padding:10px 22px;box-shadow:0 5px 0 #3b2b3a;cursor:pointer}
+#hubNews{position:fixed;inset:0;z-index:25;display:grid;place-items:center;background:rgba(59,43,58,.3);padding:16px;font-family:"Nunito","Zen Maru Gothic","Zen Kaku Gothic New",system-ui,sans-serif;color:#3b2b3a}
+#hubNews[hidden]{display:none}
+#hubNews .card{position:relative;background:#fffaf4;border:4px solid #3b2b3a;border-radius:26px;box-shadow:0 8px 0 #3b2b3a;max-width:460px;padding:26px 26px 22px;text-align:center;animation:hubPop .45s cubic-bezier(.2,1.4,.4,1)}
+#hubNews .stamp{width:74px;height:74px;margin:-62px auto 8px;border-radius:50%;background:#ff8fb0;border:4px solid #3b2b3a;box-shadow:0 5px 0 #3b2b3a;display:grid;place-items:center;color:#fff;font-weight:900;font-size:24px;transform:rotate(-8deg)}
+#hubNews h2{margin:0 0 10px;font-weight:900;font-size:24px;color:#1f8a78}
+#hubNews p{margin:0 0 18px;font-size:17px;line-height:1.5;font-weight:700}
+#hubNews button{font:inherit;font-weight:900;font-size:18px;background:#1f8a78;color:#fff;border:4px solid #3b2b3a;border-radius:999px;padding:10px 24px;box-shadow:0 5px 0 #3b2b3a;cursor:pointer}
+@keyframes hubPop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){#hubNews .card{animation:none}}
+@media (max-aspect-ratio:13/10){
+  .tLogo{left:50%;transform:translateX(-50%);text-align:center;top:max(3vh,14px);width:92vw}
+  .tLogo h1{font-size:clamp(40px,12vw,72px);text-shadow:3px 0 0 #1f8a78,-3px 0 0 #1f8a78,0 3px 0 #1f8a78,0 -3px 0 #1f8a78,2px 2px 0 #1f8a78,-2px 2px 0 #1f8a78,2px -2px 0 #1f8a78,-2px -2px 0 #1f8a78,4px 5px 0 #3b2b3a}
+  .tLogo p{display:none}
+  .tMenu{left:50%;transform:translateX(-50%);top:auto;bottom:max(4vh,18px);gap:10px}
+  .tMenu button{padding:10px 20px;text-align:center;align-items:center}
+}
+@media (prefers-reduced-motion:reduce){#titleArt *{animation:none!important}#tPetals{display:none}}
+</style>
+<div id="hubNews" role="dialog" aria-modal="true" aria-labelledby="hubNewsH" hidden><div class="card">
+  <div class="stamp">乗換</div>
+  <h2 id="hubNewsH">Nová etapa: přestupní uzel</h2>
+  <p>Tvoje město roste a stává se důležitým přestupním uzlem. Z okolí do něj směřují další linky. Zajisti hladký přestup cestujících.</p>
+  <button id="hubNewsGo" type="button">Otevřít záložku Uzel</button>
+</div></div>
+<div id="title" role="dialog" aria-modal="true" aria-label="Úvodní obrazovka hry Stanice Komorebi" hidden>
+<svg id="titleArt" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+
+<!-- obloha, slunce, mraky -->
+<rect y="-900" width="1600" height="1800" fill="#9fc8ea"/><rect width="1600" height="900" fill="url(#tSky)"/>
+<circle cx="800" cy="360" r="330" fill="url(#tSun)"/>
+<circle cx="800" cy="360" r="105" fill="#fff6dc"/>
+<g fill="#fffaf4" opacity=".9">
+  <path d="M120 170a40 40 0 0 1 70-26a50 50 0 0 1 92 6a34 34 0 0 1 20 62h-170a30 30 0 0 1-12-42z"/>
+  <path d="M1160 120a34 34 0 0 1 60-22a44 44 0 0 1 80 6a30 30 0 0 1 16 54h-148a26 26 0 0 1-8-38z"/>
+  <path d="M560 210a26 26 0 0 1 46-16a34 34 0 0 1 62 4a24 24 0 0 1 12 42h-114a20 20 0 0 1-6-30z" opacity=".8"/>
+</g>
+<!-- hory a městečko na obzoru -->
+<path d="M820 600L1160 225L1500 600z" fill="#b9a7d6"/>
+<path d="M1160 225L1094 298L1120 290L1142 312L1166 292L1190 314L1214 296L1230 304z" fill="#fffaff"/>
+<path d="M0 560C140 470 290 500 400 540C520 470 680 500 820 560C980 500 1150 520 1300 560C1420 520 1530 530 1600 548V640H0z" fill="#9fc3b0"/>
+<path d="M0 600C200 560 420 590 600 600C820 570 1100 590 1600 590V660H0z" fill="#86b39b"/>
+<g fill="#f3e3d6" stroke="#6b5a6e" stroke-width="2">
+  <path d="M40 620h70v-34l35-22l35 22v34z"/><path d="M190 622h56v-30l28-18l28 18v30z"/>
+  <path d="M1420 612h64v-30l32-20l32 20v30z"/><path d="M1300 618h52v-26l26-16l26 16v26z"/>
+</g>
+<g fill="#7c6a86"><path d="M30 588l45-30l45 30z"/><path d="M182 594l38-24l38 24z"/><path d="M1412 584l42-28l42 28z"/><path d="M1294 594l34-22l34 22z"/></g>
+<!-- kolej za nástupištěm -->
+<rect x="0" y="650" width="1600" height="40" fill="#9b8f98"/>
+<!-- usměvavý vláček -->
+<g id="tTrain" stroke="#3b2b3a" stroke-width="5" stroke-linejoin="round">
+  <path d="M1318 316L1600 396V676L1318 690z" fill="#f4ead8"/>
+  <path d="M1318 520L1600 548V586L1318 566z" fill="#1f8a78" stroke-width="0"/>
+  <g fill="#3d4f75" stroke-width="4"><path d="M1356 400l60 14v56l-60-6z"/><path d="M1444 420l56 13v52l-56-5z"/><path d="M1528 438l60 13v50l-60-5z"/></g>
+  <path d="M1300 316L1600 396" fill="none" stroke-width="5"/>
+  <g fill="none" stroke-width="5"><path d="M1130 300l-24-46h120l-24 46"/><path d="M1096 254h140"/></g>
+  <rect x="1000" y="292" width="330" height="400" rx="70" fill="#fbf3e6"/>
+  <rect x="1078" y="310" width="174" height="40" rx="10" fill="#2a2430"/>
+  <text x="1165" y="339" font-size="24" text-anchor="middle" fill="#ffb347" stroke="none" font-weight="700" font-family="'Zen Maru Gothic','Zen Kaku Gothic New',sans-serif">こもれび</text>
+  <rect x="1026" y="366" width="278" height="140" rx="40" fill="url(#tGlass)"/>
+  <path d="M1050 384q30-6 54 2l-40 92q-16-4-22-20z" fill="#ffffff" opacity=".14" stroke="none"/>
+  <g class="tBlink">
+    <ellipse cx="1112" cy="438" rx="36" ry="44" fill="#ffffff"/><ellipse cx="1218" cy="438" rx="36" ry="44" fill="#ffffff"/>
+    <ellipse cx="1116" cy="448" rx="22" ry="30" fill="#2a2430" stroke="none"/><ellipse cx="1214" cy="448" rx="22" ry="30" fill="#2a2430" stroke="none"/>
+    <circle cx="1124" cy="434" r="9" fill="#fff" stroke="none"/><circle cx="1222" cy="434" r="9" fill="#fff" stroke="none"/>
+    <circle cx="1108" cy="462" r="4" fill="#fff" stroke="none"/><circle cx="1206" cy="462" r="4" fill="#fff" stroke="none"/>
+  </g>
+  <rect x="1000" y="524" width="330" height="40" fill="#1f8a78" stroke="none"/>
+  <path d="M1004 524h322M1004 564h322" fill="none" stroke-width="4"/>
+  <ellipse cx="1078" cy="544" rx="26" ry="13" fill="#ff9fb4" stroke="none" opacity=".9"/><ellipse cx="1252" cy="544" rx="26" ry="13" fill="#ff9fb4" stroke="none" opacity=".9"/>
+  <path d="M1140 584q25 26 50 0z" fill="#e8667a" stroke-width="4"/>
+  <circle cx="1056" cy="612" r="20" fill="#fff1b0"/><circle cx="1274" cy="612" r="20" fill="#fff1b0"/>
+  <rect x="1040" y="650" width="250" height="34" rx="10" fill="#4a4250"/>
+  <rect x="1132" y="636" width="66" height="22" rx="6" fill="#ffffff" stroke-width="3"/>
+  <text x="1165" y="653" font-size="15" text-anchor="middle" fill="#3b2b3a" stroke="none" font-weight="700" font-family="'Zen Maru Gothic',sans-serif">0505</text>
+</g>
+<!-- nástupiště -->
+<path d="M0 690H1600V1400H0z" fill="#d9cfdc"/><path d="M0 690H1600V900H0z" fill="url(#tPlat)"/>
+<rect x="0" y="690" width="1600" height="14" fill="#f2c94c"/>
+<rect x="0" y="704" width="1600" height="6" fill="#ffffff"/>
+<g stroke="#e6d9e6" stroke-width="3"><path d="M0 780H1600M0 860H1600"/></g>
+<!-- staniční cedule -->
+<g stroke="#3b2b3a" stroke-width="5" stroke-linejoin="round">
+  <rect x="1394" y="520" width="14" height="190" fill="#5b6a7c"/><rect x="1546" y="520" width="14" height="190" fill="#5b6a7c"/>
+  <rect x="1370" y="420" width="214" height="124" rx="12" fill="#fbfcfa"/>
+  <rect x="1372" y="494" width="210" height="18" fill="#1f8a78" stroke-width="0"/>
+  <circle cx="1477" cy="503" r="13" fill="#fbfcfa" stroke="#146556" stroke-width="6"/>
+  <text x="1477" y="478" font-size="42" text-anchor="middle" fill="#1c2a3f" stroke="none" font-weight="900" font-family="'Zen Maru Gothic','Shippori Mincho',serif">こもれび</text>
+  <text x="1477" y="533" font-size="15" text-anchor="middle" fill="#5b6a7c" stroke="none" font-family="'Zen Maru Gothic',sans-serif">Komorebi</text>
+</g>
+<!-- výpravčí -->
+<g id="tGirl" stroke="#3b2b3a" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+  <ellipse cx="770" cy="858" rx="128" ry="18" fill="#3b2b3a" opacity=".14" stroke="none"/>
+  <path d="M736 770v66M796 770v66" stroke="#2c3e66" stroke-width="26"/>
+  <path d="M718 838q18-14 36 0v12h-40zM780 838q18-14 36 0v12h-40z" fill="#5a3a2c"/>
+  <path d="M708 692h124l22 92h-168z" fill="#2c3e66"/>
+  <path d="M760 692v92" stroke="#3f5a8a" stroke-width="3"/>
+  <!-- paže s plácačkou -->
+  <g class="tWave">
+    <path d="M826 592q48-22 64-96" fill="none" stroke="#2c3e66" stroke-width="34"/>
+    <path d="M826 592q48-22 64-96" fill="none" stroke-width="0"/>
+    <path d="M896 500l38-104" stroke="#8a6a4a" stroke-width="8"/>
+    <circle cx="938" cy="384" r="38" fill="#3cba7a"/><circle cx="938" cy="384" r="22" fill="#ffffff" stroke-width="4"/>
+    <circle cx="892" cy="500" r="20" fill="#ffffff"/>
+  </g>
+  <path d="M706 596q-26 50-20 96" fill="none" stroke="#2c3e66" stroke-width="34"/>
+  <circle cx="688" cy="698" r="19" fill="#ffffff"/>
+  <rect x="752" y="548" width="36" height="40" fill="#ffd6c0"/>
+  <path d="M700 574q70-26 140 0l-6 124h-128z" fill="#2c3e66"/>
+  <path d="M770 572l-26 30l26 52l26-52z" fill="#ffffff"/>
+  <path d="M770 588l-12 18l12 30l12-30z" fill="#1f8a78" stroke-width="3"/>
+  <g fill="#e7bd4d" stroke-width="3"><circle cx="746" cy="632" r="6"/><circle cx="794" cy="632" r="6"/><circle cx="746" cy="664" r="6"/><circle cx="794" cy="664" r="6"/></g>
+  <path d="M704 576l-14 6M836 576l14 6" stroke="#e7bd4d" stroke-width="6"/>
+  <!-- hlava -->
+  <path d="M664 470q0-112 106-114q106 2 106 114v84q-2 30-28 30q-16-4-18-24v-40h-120v40q-2 20-18 24q-26 0-28-30z" fill="#4a2c2a"/>
+  <circle cx="770" cy="470" r="102" fill="#ffe3d0"/>
+  <path d="M668 456q8-92 102-96q94 4 102 96q-18-14-30-40q-6 30-34 38q8-26-4-44q-14 36-56 44q14-22 6-40q-26 34-60 40q12-18 8-36q-14 22-34 38z" fill="#4a2c2a"/>
+  <!-- čepice výpravčí -->
+  <path d="M672 404q-6-70 98-74q104 4 98 74q-98-22-196 0z" fill="#2c3e66"/>
+  <path d="M670 402q100-24 200 0v22q-100-22-200 0z" fill="#1f8a78"/>
+  <path d="M662 426q108-30 216 0q-6 18-30 16q-78-18-156 0q-24 2-30-16z" fill="#1c2236"/>
+  <circle cx="770" cy="380" r="16" fill="#e7bd4d" stroke-width="4"/>
+  <path d="M770 370l-6 10h12zM764 384h12" stroke="#7a5a1a" stroke-width="2.5" fill="none"/>
+  <!-- obličej -->
+  <g class="tBlinkG">
+    <ellipse cx="730" cy="498" rx="20" ry="27" fill="url(#tIris)" stroke-width="4"/>
+    <ellipse cx="810" cy="498" rx="20" ry="27" fill="url(#tIris)" stroke-width="4"/>
+    <circle cx="737" cy="488" r="7" fill="#fff" stroke="none"/><circle cx="817" cy="488" r="7" fill="#fff" stroke="none"/>
+    <circle cx="724" cy="510" r="3.5" fill="#fff" stroke="none"/><circle cx="804" cy="510" r="3.5" fill="#fff" stroke="none"/>
+  </g>
+  <path d="M674 440q-10 80 12 132q14-40 12-118zM866 440q10 80-12 132q-14-40-12-118z" fill="#4a2c2a" stroke-width="4"/>
+  <ellipse cx="708" cy="536" rx="18" ry="9" fill="#ff9fb4" stroke="none" opacity=".8"/><ellipse cx="832" cy="536" rx="18" ry="9" fill="#ff9fb4" stroke="none" opacity=".8"/>
+  <path d="M756 534q14 16 28 0z" fill="#e8667a" stroke-width="3.5"/>
+</g>
+<!-- kočka přednosta -->
+<g id="tCat" stroke="#3b2b3a" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+  <ellipse cx="1000" cy="858" rx="86" ry="14" fill="#3b2b3a" opacity=".14" stroke="none"/>
+  <path class="tTail" d="M1060 836q70-6 62-70q-4-30 22-40" fill="none" stroke="#f2a65a" stroke-width="18"/>
+  <path d="M938 850q-14-120 62-126q76 6 62 126z" fill="#fffaf2"/>
+  <path d="M1004 728q40 4 52 60q-30-4-48-30z" fill="#f2a65a" stroke-width="0"/>
+  <path d="M944 812q12-20 30-16q-6 30-30 40z" fill="#3b3438" stroke-width="0"/>
+  <path d="M960 850q-2-24 18-24q16 0 16 24M1006 850q0-24 18-24q18 0 16 24" fill="#fffaf2"/>
+  <path d="M968 732q32 18 64 0l-8 18q-24 12-48 0z" fill="#1f8a78" stroke-width="4"/>
+  <circle cx="1000" cy="756" r="7" fill="#e7bd4d" stroke-width="3"/>
+  <!-- hlava -->
+  <path d="M934 640l-6-62l52 34zM1066 640l6-62l-52 34z" fill="#fffaf2"/>
+  <path d="M940 626l-2-34l26 20zM1060 626l2-34l-26 20z" fill="#ff9fb4" stroke="none"/>
+  <ellipse cx="1000" cy="672" rx="78" ry="64" fill="#fffaf2"/>
+  <path d="M1012 612q44 4 58 44q-36 0-58-26z" fill="#f2a65a" stroke-width="0"/>
+  <path d="M934 652q12-30 38-30q-6 24-38 44z" fill="#3b3438" stroke-width="0"/>
+  <ellipse cx="1000" cy="672" rx="78" ry="64" fill="none"/>
+  <!-- čepice přednosty -->
+  <path d="M948 616q-2-44 52-46q54 2 52 46q-52-14-104 0z" fill="#2c3e66"/>
+  <path d="M946 614q54-16 108 0v12q-54-14-108 0z" fill="#e7bd4d" stroke-width="3"/>
+  <path d="M940 630q60-20 120 0q-4 12-18 10q-42-10-84 0q-14 2-18-10z" fill="#1c2236" stroke-width="4"/>
+  <!-- tvářička -->
+  <path d="M960 676q12-14 24 0M1016 676q12-14 24 0" fill="none" stroke-width="4.5"/>
+  <path d="M994 694h12l-6 8z" fill="#ff8fa6" stroke-width="3"/>
+  <path d="M988 708q6 8 12 0q6 8 12 0" fill="none" stroke-width="3.5"/>
+  <path d="M948 698l-34-6M948 708l-32 6M1052 698l34-6M1052 708l32 6" stroke-width="3"/>
+  <ellipse cx="956" cy="712" rx="14" ry="7" fill="#ff9fb4" stroke="none" opacity=".8"/><ellipse cx="1044" cy="712" rx="14" ry="7" fill="#ff9fb4" stroke="none" opacity=".8"/>
+  <!-- zvednutá tlapka jako u kočky štěstí -->
+  <g class="tPaw"><path d="M944 760q-34-30-22-80" fill="none" stroke="#fffaf2" stroke-width="30"/><path d="M944 760q-34-30-22-80" fill="none" stroke-width="0"/>
+    <circle cx="922" cy="672" r="20" fill="#fffaf2"/><path d="M914 664q4-6 8 0M926 662q4-6 8 0" fill="none" stroke-width="3"/></g>
+</g>
+<!-- větev sakury -->
+<g>
+  <path d="M1600 30C1500 50 1440 90 1350 100C1300 106 1270 130 1240 160M1440 78C1420 120 1400 150 1380 170M1520 46C1530 90 1520 120 1500 150" fill="none" stroke="#6b4a3a" stroke-width="10" stroke-linecap="round"/>
+  <g fill="#ffc3d2" stroke="#e88aa6" stroke-width="2">
+    <use href="#tBloom" x="1250" y="150"/><use href="#tBloom" x="1290" y="118"/><use href="#tBloom" x="1340" y="96"/><use href="#tBloom" x="1384" y="168"/>
+    <use href="#tBloom" x="1410" y="128"/><use href="#tBloom" x="1460" y="74"/><use href="#tBloom" x="1500" y="150"/><use href="#tBloom" x="1522" y="96"/>
+    <use href="#tBloom" x="1560" y="40"/><use href="#tBloom" x="1226" y="178"/><use href="#tBloom" x="1440" y="104"/>
+  </g>
+  <g fill="#ff8fb0"><circle cx="1250" cy="150" r="4"/><circle cx="1290" cy="118" r="4"/><circle cx="1340" cy="96" r="4"/><circle cx="1384" cy="168" r="4"/><circle cx="1410" cy="128" r="4"/><circle cx="1460" cy="74" r="4"/><circle cx="1500" cy="150" r="4"/><circle cx="1522" cy="96" r="4"/><circle cx="1560" cy="40" r="4"/><circle cx="1226" cy="178" r="4"/><circle cx="1440" cy="104" r="4"/></g>
+</g>
+<!-- jiskřičky -->
+<g fill="#ffffff" opacity=".9"><path d="M640 300l6 14l14 6l-14 6l-6 14l-6-14l-14-6l14-6z"/><path d="M950 250l4 10l10 4l-10 4l-4 10l-4-10l-10-4l10-4z"/><path d="M1090 600l4 9l9 4l-9 4l-4 9l-4-9l-9-4l9-4z"/></g>
+</svg>
+
+  <div id="tPetals"></div>
+  <div class="tLogo"><span class="pill">こもれび駅 · 乗換</span><h1>Stanice<br><span>Komorebi</span></h1><p>Vybuduj rušnou japonskou stanici</p></div>
+  <nav class="tMenu" aria-label="Menu">
+    <button id="tCont" type="button">Pokračovat ve hře<small id="tContInfo"></small></button>
+    <button id="tNew" type="button">Nová hra<small>Od venkovské zastávky</small></button>
+    <div id="tConfirm" hidden>Rozehraná stanice se smaže a začneš znovu od první zastávky.<div><button id="tYes" class="warn" type="button">Ano, nová hra</button><button id="tNo" type="button">Zpět</button></div></div>
+    <button id="tHelp" type="button">Nápověda<small>Jak se hraje</small></button>
+  </nav>
+  <div id="tHelpBox" hidden><div class="card" role="document">
+    <h2>Jak se hraje</h2>
+    <ul>
+      <li><b>Stanice vydělává sama.</b> Vlaky odvážejí cestující a ty peníze investuješ v panelu Investice. Nikam se nespěchá.</li>
+      <li><b>Koleje</b> zvětšují kapacitu: delší soupravy, hustší jízdní řád, nové koleje. <b>Stanice</b> a <b>Okolí</b> přivádějí víc lidí a zvyšují útratu.</li>
+      <li><b>Uzel</b> se odemkne, až z Komorebi vyroste rušné město. Co je potřeba splnit, uvidíš v záložce Uzel. Pak linky přivezou přestupující a vylepšení zvýší plynulost. U každé karty vidíš, kolik přidá za minutu.</li>
+      <li><b>Kočka štěstí</b> se občas schová na stanici. Klepni na ni pro bonus. Vzácný rychlík Kaze, noční vlak Hoshi a sporťák Hayate přinášejí víc.</li>
+      <li><b>Ovládání:</b> tažením posuneš pohled, kolečkem nebo dvěma prsty přiblížíš. Hra se ukládá sama.</li>
+      <li><b>Cíl:</b> postavit rychlík do Tokia a dovést Komorebi až na hlavní stanici údolí.</li>
+    </ul>
+    <button id="tHelpClose" type="button">Zpět do menu</button>
+  </div></div>
+</div>
+
+<style>
+/* Slavnostní konec hry: kawaii karta s postavičkami, konfetami a ohňostrojem */
+#finale{position:fixed;inset:0;z-index:26;display:grid;place-items:center;background:rgba(59,43,58,.38);padding:14px;overflow:hidden;font-family:"Nunito","Zen Maru Gothic","Zen Kaku Gothic New",system-ui,sans-serif;color:#3b2b3a}
+#finale[hidden]{display:none}
+#finale .card{position:relative;background:#fffaf4;border:4px solid #3b2b3a;border-radius:28px;box-shadow:0 9px 0 #3b2b3a;max-width:560px;width:100%;max-height:calc(100vh - 28px);overflow:auto;padding:18px 24px 22px;text-align:center;animation:finPop .6s cubic-bezier(.2,1.5,.4,1)}
+#finale .pill{display:inline-block;background:#ff8fb0;color:#fff;font-weight:900;font-size:22px;padding:6px 18px;border-radius:999px;border:3px solid #3b2b3a;box-shadow:0 4px 0 #3b2b3a;transform:rotate(-4deg);font-family:"Zen Maru Gothic","Nunito",sans-serif}
+#finale svg{display:block;width:100%;max-width:400px;height:auto;margin:6px auto 0}
+#finale h2{margin:4px 0 8px;font-weight:900;font-size:clamp(26px,5vw,34px);color:#1f8a78;line-height:1.1}
+#finale p{margin:0 0 12px;font-size:16.5px;line-height:1.5;font-weight:700}
+#finale .stats{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+#finale .stats span{background:#eef6f3;border:3px solid #3b2b3a;border-radius:16px;padding:6px 12px;font-weight:800;font-size:14px;line-height:1.2}
+#finale .stats b{display:block;font-size:18px;color:#1f8a78;font-variant-numeric:tabular-nums}
+#finale .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#finale button{font:inherit;font-weight:900;font-size:17px;border:4px solid #3b2b3a;border-radius:999px;padding:10px 22px;box-shadow:0 5px 0 #3b2b3a;cursor:pointer;background:#fffaf4;color:#3b2b3a}
+#finale button.go{background:#1f8a78;color:#fff}
+#finale button:active{transform:translateY(3px);box-shadow:0 2px 0 #3b2b3a}
+#finConf{position:absolute;inset:0;pointer-events:none}
+#finConf i{position:absolute;top:-20px;width:10px;height:16px;border-radius:2px;animation:finFall linear infinite}
+@keyframes finFall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}
+@keyframes finPop{0%{transform:scale(.5) rotate(-4deg);opacity:0}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){#finale .card{animation:none}#finConf{display:none}}
+</style>
+<div id="finale" role="dialog" aria-modal="true" aria-labelledby="finH" hidden>
+  <div id="finConf"></div>
+  <div class="card">
+    <span class="pill">おめでとう!</span>
+    <svg viewBox="640 300 720 580" aria-hidden="true"><use href="#tTrain"/><use href="#tGirl"/><use href="#tCat"/></svg>
+    <h2 id="finH">Komorebi je hotová!</h2>
+    <p>Z venkovské zastávky jsi vybudoval rušnou stanici a přestupní uzel celého údolí. Rychlík do Tokia staví, autobusy i místní dráhy navazují a ulice jsou plné lidí.</p>
+    <div class="stats"><span>Vyděláno celkem<b id="finMoney"></b></span><span>Přepraveno<b id="finPax"></b></span><span>Odehráno<b id="finDays"></b></span></div>
+    <div class="btns"><button id="finFw" class="go" type="button">Odpálit slavnostní ohňostroj</button><button id="finClose" type="button">Pokračovat ve hře</button></div>
+  </div>
+</div>
+
 <script>
 (()=>{"use strict";
 /* ─────────────── EKONOMIKA ─────────────── */
@@ -142,7 +448,7 @@ const UPG = [
  {id:"sched",tab:0,jp:"ダイヤ",name:"Hustší jízdní řád",desc:"Vlaky jezdí o 12 % častěji.",max:7,cost:2600,g:3.1,at:[17,13]},
  {id:"tracks",tab:0,jp:"線路",name:"Nová kolej",desc:"Další kolej, další vlaky. První přinese ostrovní nástupiště a lávku.",max:3,cost:42000,g:16,at:[17,16]},
  {id:"elec",tab:0,jp:"電化",name:"Elektrifikace trati",desc:"Trolej a nové stříbrné vlaky: o 15 % rychlejší provoz, o 25 % větší kapacita.",max:1,cost:300000,g:1,at:[20,13]},
- {id:"express",tab:0,jp:"特急",name:"Rychlík do Tokia",desc:"Na čtvrté koleji staví vysokorychlostní vlak ve stylu šinkansenu a jízdné roste o 60 %.",max:1,cost:9e7,g:1,at:[17,19],req:s=>s.tracks>=3&&s.elec>=1,reqText:"Vyžaduje čtvrtou kolej a elektrifikaci."},
+ {id:"express",tab:0,jp:"特急",name:"Rychlík do Tokia",desc:"Na čtvrté koleji staví vysokorychlostní vlak ve stylu šinkansenu a jízdné roste o 60 %.",max:1,cost:7.5e7,g:1,at:[17,19],req:s=>s.tracks>=3&&s.elec>=1,reqText:"Vyžaduje čtvrtou kolej a elektrifikaci."},
  // STANICE
  {id:"decor",tab:1,jp:"花壇",name:"Lavičky a květiny",desc:"Hezčí čekání. Přijde o 8 % víc lidí.",max:3,cost:400,g:6,at:[22,8]},
  {id:"machine",tab:1,jp:"券売機",name:"Automaty na jízdenky",desc:"Rychlejší odbavení, jízdné o 25 % vyšší.",max:3,cost:1500,g:9,at:[19.5,7.5]},
@@ -162,23 +468,35 @@ const UPG = [
  {id:"shopup",tab:2,jp:"改装",name:"Vylepšení uličky",desc:"Všechny obchody zkrásní a přibudou na nich detaily: stánky s praporky, patro s vývěsními štíty, krytá pasáž s lucernami, neony. +¥15 za osobu za stupeň.",max:4,cost:30000,g:6,at:[26,3.6]},
  {id:"shrine",tab:2,jp:"神社",name:"Chrám s branou torii",desc:"Poutníci a turisté: první stupeň přidá 25 % cestujících, každý další 10 %. Každý stupeň chrám zkrášlí.",max:4,cost:700000,g:4,at:[38,9]},
  {id:"onsen",tab:2,jp:"温泉",name:"Lázně onsen",desc:"Hosté z měst: o 15 % víc lidí a o 15 % vyšší jízdné.",max:3,cost:2.4e6,g:5,at:[6,25]},
+ {id:"konbini",tab:2,jp:"コンビニ",name:"Konbini Komorebi Mart",desc:"Obchod otevřený nonstop v rohu u jižní ulice. Každý stupeň: o 5 % víc lidí a +¥15 za osobu. Druhý přidá parkoviště a ceduli u silnice, třetí patro s byty a zásobování.",max:3,cost:250000,g:4.5,at:[38,30],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ (záložka Uzel)."},
+ // UZEL: linky přivádějí přestupující, vylepšení zvyšují plynulost (kolik z nich stihne přípoj)
+ {id:"south",tab:3,jp:"南口",name:"Jižní východ",desc:"Nový vchod z jihu a náměstí pro přestupní uzel. Pozemek se rozšíří a přijde o 8 % víc lidí.",max:1,cost:150000,g:1,at:[26.6,23.6],req:s=>hubOpen(),reqText:"Uzel se odemkne, až město vyroste."},
+ {id:"busterm",tab:3,jp:"バス",name:"Autobusové nádraží",desc:"Každé stání přidá autobusovou linku z okolních vesnic. Linka přivede k přestupu 10 % cestujících stanice.",max:3,cost:300000,g:3.5,at:[27,33],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ."},
+ {id:"yama",tab:3,jp:"山彦線",name:"Místní dráha Yamabiko",desc:"Motorák místní dráhy končí na jižním terminálu. Každý stupeň přivede k přestupu 15 % cestujících stanice, druhý přidá vůz.",max:2,cost:1.2e6,g:5,at:[15,29.2],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ."},
+ {id:"komichi",tab:3,jp:"小道電鉄",name:"Soukromá dráha Komichi",desc:"Malá dráha k jezeru a lázním s dřevěným kioskem a hortenziemi podél koleje. Každý stupeň přivede k přestupu 20 % cestujících stanice a turisté utratí v kiosku o ¥20 víc. Druhý stupeň přidá dřevěnou bránu s lucernami a historickou tramvaj.",max:2,cost:4e6,g:5,at:[15,32.4],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ."},
+ {id:"takt",tab:3,jp:"接続",name:"Navazující jízdní řád",desc:"Spoje na sebe navazují a jezdí o něco častěji. +8 % plynulosti za stupeň.",max:3,cost:200000,g:4,at:[28.9,27.3],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ."},
+ {id:"info",tab:3,jp:"案内板",name:"Informační tabule",desc:"Lidé hned vědí, kam jít. +8 % plynulosti.",max:1,cost:500000,g:1,at:[24.4,27.4],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ."},
+ {id:"cover",tab:3,jp:"屋根",name:"Krytá cesta",desc:"Stříška od jižního východu k autobusům a terminálu. +8 % plynulosti.",max:1,cost:1.5e6,g:1,at:[26.6,29],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ."},
+ {id:"hall",tab:3,jp:"乗換ホール",name:"Přestupní hala",desc:"Prosklená hala nad terminálem a zastávkami. +10 % plynulosti a každý přestupující utratí o ¥30 víc.",max:1,cost:9e6,g:1,at:[26.6,30.5],req:s=>s.south>=1,reqText:"Vyžaduje jižní východ."},
 ];
 const UPGMAP = Object.fromEntries(UPG.map(u=>[u.id,u]));
-const TABS = ["Koleje","Stanice","Okolí"];
+const TABS = ["Koleje","Stanice","Okolí","Uzel"];
 const blankL = ()=>Object.fromEntries(UPG.map(u=>[u.id,0]));
 const costOf = (u,l)=>{const c=u.cost*Math.pow(u.g,l);const m=Math.pow(10,Math.floor(Math.log10(c))-1);return Math.round(c/m)*m};
 function rates(L){
   const demand=(0.32+0.1*L.houses+0.28*L.shops+(L.bike?0.3:0))
     *(1+.08*L.decor)*(1+.06*L.walk)*(1+.08*L.homes)*(L.cafe?1.1:1)*(1+.12*L.canopy)*(1+.05*L.trees)*(1+.2*L.building)
-    *(L.bus?1.3:1)*(L.shrine?1.15+.1*L.shrine:1)*(1+.15*L.onsen);
+    *(L.bus?1.3:1)*(L.shrine?1.15+.1*L.shrine:1)*(1+.15*L.onsen)*(L.south?1.08:1)*(1+.05*L.konbini);
   const interval=Math.max(26,75*Math.pow(.88,L.sched)*(L.elec?.85:1));
   const tracks=1+L.tracks, cars=1+L.cars;
   const cap=Math.round(cars*50*(L.elec?1.25:1));
   const capRate=tracks*cap/interval;
   const fare=Math.round(150*(1+.25*L.machine)*(1+.2*L.building)*(1+.15*L.onsen)*(L.express?1.6:1)/10)*10;
-  const spend=20*L.vending+60*L.kiosk+25*L.shops+(L.cafe?30:0)+15*L.shopup*(L.shops?1:0);
+  const spend=20*L.vending+60*L.kiosk+25*L.shops+(L.cafe?30:0)+15*L.shopup*(L.shops?1:0)+15*L.konbini;
   const flow=Math.min(demand,capRate);
-  return {demand,interval,tracks,cars,cap,capRate,fare,spend,flow,perMin:flow*(fare+spend)*60};
+  // přestupy: linky uzlu přivádějí lidi (podíl z poptávky), přípoj stihne jen část podle plynulosti
+  const share=hubShare(L),plyn=hubPlyn(L),xferIn=demand*share,xfer=xferIn*plyn,xval=Math.round(fare*.5)+spend+30+(L.hall?30:0)+20*L.komichi,hubPerMin=xfer*xval*60;
+  return {demand,interval,tracks,cars,cap,capRate,fare,spend,flow,share,plyn,xferIn,xfer,xval,hubPerMin,perMin:flow*(fare+spend)*60+hubPerMin};
 }
 
 /* ─────────────── STAV ─────────────── */
@@ -189,7 +507,7 @@ function applySave(s){
   G={...G,...s,L:{...blankL(),...s.L}};
   return true;
 }
-function serialize(){return {L:G.L,money:G.money,total:G.total,pax:G.pax,clock:G.clock,savedAt:Date.now(),waiting:G.waiting}}
+function serialize(){return {L:G.L,money:G.money,total:G.total,pax:G.pax,clock:G.clock,savedAt:Date.now(),waiting:G.waiting,hubOpen:!!G.hubOpen,done:!!G.done}}
 function readLocal(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||"null")}catch(e){return null}}
 function writeLocal(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize()))}catch(e){}}
 function saveCloud(){writeLocal()}
@@ -258,7 +576,7 @@ function updatePalette(){
 const roofC=c=>mix(c,"#f2f5f7",snow*.82);
 
 /* ─────────────── KRESBA: ZÁKLAD ─────────────── */
-const HW=24,HH=12,ZU=24,MAPX=40,MAPY=28;
+const HW=24,HH=12,ZU=24,MAPX=40;let MAPY=28;
 const cv=$("scene"),ctx=cv.getContext("2d");
 let c=ctx;
 const px=(x,y,z=0)=>(x-y)*HW, py=(x,y,z=0)=>(x+y)*HH-z*ZU;
@@ -302,16 +620,26 @@ function winY(x0,x1,y,z0,z1){const w=mix("#7fa0b8","#ffe08a",night);wallY(x0,x1,
 function winX(x,y0,y1,z0,z1){const w=mix("#5f7f96","#ffd477",night);wallX(x,y0,y1,z0,z1,w);if(night>.3)addLight(x,(y0+y1)/2,(z0+z1)/2,.32,.5)}
 
 /* Vrstvení: pásy podle y (koleje a perony jsou rovnoběžné), uvnitř pásu podle x+y */
-const STRIP=y=>y<4.72?0:y<5.82?1:y<11?2:y<12.5?3:y<14?4:y<15.5?5:y<17?6:y<18.5?7:y<20?8:y<21.5?9:10;
+const STRIP=y=>y<4.72?0:y<5.82?1:y<11?2:y<12.5?3:y<14?4:y<15.5?5:y<17?6:y<18.5?7:y<20?8:y<21.5?9:y<23?10:y<28.6?11:y<30?12:y<31.7?13:y<33.1?14:y<33.98?15:y<36?16:17;
 let Q=[];
 const q=(x,y,fn,bias=0)=>Q.push({k:STRIP(y)*10000+x+y+bias,fn});
 let lights=[];
-function addLight(x,y,z,r,a){lights.push(px(x,y),py(x,y,z),r,a)}
+let SWAPXY=false,LALPHA=1; // SWAPXY: auta na jižní ulici se kreslí se zaměněnými osami; LALPHA: záře vozidla, které se právě vynořuje za okrajem
+function addLight(x,y,z,r,a){if(SWAPXY){const s=x;x=y;y=s}a*=LALPHA;lights.push(px(x,y),py(x,y,z),r,a)}
+// červená koncová světla mají vlastní záři
+let redLights=[];
+let OCCL=[];
+function lightHidden(x,y,z){
+  for(const [x0,y0,x1,y1,z0,z1] of OCCL){const t0=Math.max(x0-x,y0-y,z0-z,.05),t1=Math.min(x1-x,y1-y,z1-z);if(t0<t1)return true}
+  return false;
+}
+function trainLight(x,y,z,r,a){if(!lightHidden(x,y,z))addLight(x,y,z,r,a)}
+function addRedLight(x,y,z,r,a){a*=LALPHA;if(!lightHidden(x,y,z))redLights.push(px(x,y),py(x,y,z),r,a)}
 
 /* ─────────────── ZEMĚ (uložená do vlastního plátna) ─────────────── */
 let groundDirty=true;
 const groundCanvas=document.createElement("canvas");
-const GPAD=30,GMINX=-MAPY*HW-GPAD,GMINY=-GPAD,GW=(MAPX+MAPY)*HW+GPAD*2,GH=(MAPX+MAPY)*HH+GPAD*2+60,GS=1.6;
+const GPAD=30,GMINY=-GPAD,GS=1.6;let GMINX=-MAPY*HW-GPAD,GW=(MAPX+MAPY)*HW+GPAD*2,GH=(MAPX+MAPY)*HH+GPAD*2+60;
 function rng(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return s/2147483647}}
 const TRACKY=[13.25,14.75,17.75,19.25];
 function buildGround(){
@@ -332,7 +660,7 @@ function buildGround(){
   top(0,4,0,MAPX,1.8,asphalt);
   top(33,0,0,2,MAPY,asphalt);
   for(let x=1;x<MAPX;x+=2.2){if(x>31.3&&x<36.2)continue;top(x,4.87,0,1.1,.06,lineC)}
-  for(let y=1;y<MAPY;y+=2.2){if(y>1.8&&y<7||y>12&&y<21)continue;top(33.97,y,0,.06,1.1,lineC)}
+  for(let y=1;y<MAPY;y+=2.2){if(y>1.8&&y<7||y+1.1>11.9&&y<TRACKY[G.L.tracks]+1.2||G.L.south&&y>33&&y<36.5)continue;top(33.97,y,0,.06,1.1,lineC)}
   // přechod pro chodce u křižovatky
   for(const y of [5.97,3.11])for(let x=33.08;x<34.9;x+=.34)top(x,y,.005,.18,.72,lineC); // přes silnici
   for(const x of [32.12,35.13])for(let y=4.08;y<5.7;y+=.34)top(x,y,.005,.75,.18,lineC); // přes ulici
@@ -353,7 +681,8 @@ function buildGround(){
     seg(0,3.55,33,.45);seg(35,3.55,5,.45);
     seg(0,5.8,10,.45);seg(27,5.8,6,.45);seg(35,5.8,5,.45);
     if(G.L.walk>=2){
-      for(const [y,dy] of [[0,3.55],[6.25,5.85],[21.4,6.6]]){seg(32.5,y,.5,dy);seg(35,y,.5,dy)}
+      const sY=TRACKY[G.L.tracks]+.95;
+      for(const [y,dy] of [[0,3.55],[6.25,5.85],[sY,28-sY]]){seg(32.5,y,.5,dy);seg(35,y,.5,dy)}
     }
   }
   // nádvoří chrámu a kamenná cesta
@@ -365,7 +694,7 @@ function buildGround(){
   // rýžová pole
   for(let i=0;i<4;i++)for(let j=0;j<2;j++){
     const x=10.5+i*5.6,y=23.2+j*2.35;
-    if(x+5>33)continue;
+    if(x+5>33||G.L.south&&i>=2)continue;
     top(x-.1,y-.1,0,5.2,2.3,pal.soil);
     top(x,y,0,5,2.1,season===1||season===2?pal.paddy:pal.paddy);
     g.strokeStyle=pal.paddy2;g.lineWidth=1.2;g.beginPath();
@@ -386,6 +715,7 @@ function buildGround(){
   top(33,12.4,.02,2,lastY-12.4,mix("#7b8088","#b9bfc4",snow*.4));
   for(let t=0;t<n;t++){const Y=TRACKY[t];top(33,Y-.65,.06,2,1.3,"#4b4f55");top(33,Y-.38,.07,2,.07,"#8e949a");top(33,Y+.31,.07,2,.07,"#8e949a")}
   top(33,12.3,.03,2,.12,"#f0c93a");top(33,lastY,.03,2,.12,"#f0c93a");
+  hubGround(g);
   c=old;groundDirty=false;
 }
 
@@ -648,6 +978,7 @@ function canopy(p,lv){
   },500);
 }
 function stairs(y,x0,x1,z0,z1){
+  for(let i=0;i<7;i++){const t=i/7,w=(x1-x0)/7;OCCL.push([x0+(x1-x0)*t,y-.32,x0+(x1-x0)*t+w,y+.32,z0,z0+Math.max(.05,(z1-z0)*(1-t))])}
   q((x0+x1)/2,y,()=>{
     const n=7;for(let i=0;i<n;i++){const t=i/n,xa=x0+(x1-x0)*t,w=(x1-x0)/n;
       const zt=z0+(z1-z0)*(1-t);box(xa,y-.32,z0,w,.64,Math.max(.05,zt-z0),"#a9adb0")}
@@ -850,9 +1181,26 @@ function onsenDraw(lv){
     box(6.7,23.9,0,2.2,2.4,1.05,"#cdb99a");winY(7,7.5,26.3,.4,.85);winY(7.9,8.5,26.3,.4,.85);
     roof(6.7,23.9,1.05,2.2,2.4,.8,"#3d4a5c",{along:"y",wall:"#cdb99a"});
   });
-  if(lv>=3)q(5,27.1,()=>{
-    box(2.4,26.6,0,4.2,.95,.14,"#7d7a72");
-    top(2.6,26.72,.145,3.8,.7,mix("#8ec5cf","#ffd28a",night*.4));
+  const big=lv>=3,bx0=2.4,bx1=big?6.6:4.6;
+  q((bx0+bx1)/2,27.1,()=>{
+    box(bx0,26.6,0,bx1-bx0,.95,.14,"#7d7a72");
+    top(bx0+.2,26.72,.145,bx1-bx0-.4,.7,mix("#8ec5cf","#ffd28a",night*.4));
+    // koupající se: hlava a ramena nad hladinou, někdo má na hlavě složený ručník
+    const T=performance.now()/1000,who=big?[[3.05,"#242428",1],[3.85,"#a8a29a",0],[4.8,"#242428",1],[5.65,"#5a3a2c",0]]:[[3.1,"#242428",1],[3.95,"#5a3a2c",0]];
+    who.forEach(([x,hair,towel],i)=>{
+      const X=px(x,27.08),Y=py(x,27.08,.16)+Math.sin(T*1.3+i*1.7)*.6;
+      c.fillStyle="#efc9a6";c.beginPath();c.ellipse(X,Y-.6,5,2.6,0,Math.PI,0);c.fill();
+      c.beginPath();c.arc(X,Y-5.4,2.8,0,6.3);c.fill();
+      c.fillStyle=hair;c.beginPath();c.arc(X,Y-6.1,2.8,Math.PI,0);c.fill();
+      if(towel){c.fillStyle="#fbfaf2";c.fillRect(X-2.5,Y-9.4,5,1.8)}
+      c.fillStyle="rgba(255,255,255,.4)";c.beginPath();c.ellipse(X,Y,6,1.3,0,0,6.3);c.fill();
+    });
+    // v zimě si do lázně přijde zahřát i sněžná opička
+    if(big&&snow>.6){const X=px(6.15,27.05),Y=py(6.15,27.05,.16)+Math.sin(T*1.1)*.5;
+      c.fillStyle="#8a6a52";c.beginPath();c.ellipse(X,Y-1,5.2,2.8,0,Math.PI,0);c.fill();c.beginPath();c.arc(X,Y-5.6,3.6,0,6.3);c.fill();
+      c.fillStyle="#f0a0a0";c.beginPath();c.ellipse(X,Y-5,2.3,2,0,0,6.3);c.fill();
+      c.fillStyle="#2a2024";c.fillRect(X-1.3,Y-5.8,.8,.8);c.fillRect(X+.5,Y-5.8,.8,.8);
+      c.fillStyle="#ffffff";c.beginPath();c.ellipse(X,Y-8.6,2.8,1.2,0,0,6.3);c.fill()}
   });
 }
 function bikeDraw(){
@@ -868,13 +1216,15 @@ const bus={phase:"off",x:44,v:0,t:0,idle:7,did:false};
 let busCross=false;
 function drawBus(){
   if(bus.phase==="off")return;
-  q(bus.x+BUS_LEN/2,5.3,()=>{
-    const B=bus.x,y0=BUS_Y0,y1=BUS_Y1,zb=.2,zs=1.6,zt=1.74,xe=B+BUS_LEN;
+  const bAl=Math.max(0,Math.min(1,(bus.x+BUS_LEN/2+1.5)/3,(MAPX+1.5-bus.x-BUS_LEN/2)/3));if(bAl<=0)return;
+  q(bus.x+BUS_LEN/2,5.3,()=>{c.globalAlpha=bAl;LALPHA=bAl;drawBusBody();c.globalAlpha=1;LALPHA=1});
+}
+function drawBusBody(){{
+    const MAPX=1e9,B=bus.x,y0=BUS_Y0,y1=BUS_Y1,zb=.2,zs=1.6,zt=1.74,xe=B+BUS_LEN;
     const white="#f3f4ef",band="#1f8a78",glass=mix("#2f4252","#ffe7a0",night*.85);
-    const CW=(l0,l1,z0,z1,f)=>{const p=Math.max(B+l0,0),r=Math.min(B+l1,MAPX);if(r>p)wallY(p,r,y1,z0,z1,f)};
-    const xa=Math.max(B,0),xb=Math.min(xe,MAPX);
-    if(xb<=xa)return;
-    const inMap=B>=0&&xe<=MAPX;
+    const CW=(l0,l1,z0,z1,f)=>{const p=Math.max(B+l0,-1e9),r=Math.min(B+l1,MAPX);if(r>p)wallY(p,r,y1,z0,z1,f)};
+    const xa=B,xb=xe;
+    const inMap=true;
     poly([xa,y1,.02,xb,y1,.02,xb,y1+.2,.01,xa,y1+.2,.01],"rgba(15,20,30,.24)");
     top(xa,y0+.1,zt,xb-xa,y1-y0-.2,roofC("#e6e8e3"));
     poly([xa,y1,zs,xb,y1,zs,xb,y1-.1,zt,xa,y1-.1,zt],roofC("#d8dbd6"));
@@ -923,7 +1273,7 @@ function drawBus(){
       wallX(xe,(y0+y1)/2-.07,(y0+y1)/2+.07,.3,.32,"#f5f6f2");
     }
     if(night>.25){addLight(B+1.2,y1,1.15,1.2,.32);addLight(B+2.8,y1,1.15,1.2,.32);addLight(B-.2,5.3,.4,1,.6)}
-  });
+  }
 }
 /* Kočičí kavárna: dům s kočičí tváří ve štítu a kočky před vchodem */
 const CAFE={x:18.2,y:.9,dx:2.2,dy:2.5};
@@ -1149,10 +1499,11 @@ function eventScene(ev,t){
 let fw=[],fwIn=1;
 const FW_COL=["#ff6a5c","#ffd86a","#7fd4ff","#ff9ad1","#a5f07f","#ffffff"];
 function updateFireworks(dt){
-  if(eventNow===1&&(night>.25)){
+  if(finaleT>0)finaleT-=dt;
+  if((eventNow===1&&(night>.25))||finaleT>0){
     fwIn-=dt;
-    if(fwIn<=0&&fw.length<9){
-      fwIn=reduced?7:.55+Math.random()*1.3;
+    if(fwIn<=0&&fw.length<(finaleT>0?15:9)){
+      fwIn=reduced?7:finaleT>0?.22+Math.random()*.45:.55+Math.random()*1.3;
       const x=-620+Math.random()*1240,top_=Math.abs(x)*.42-95-Math.random()*65;
       fw.push({x,y:top_+250,ty:top_,t:0,boom:false,col:FW_COL[Math.floor(Math.random()*FW_COL.length)],col2:FW_COL[Math.floor(Math.random()*FW_COL.length)],sp:[]});
     }
@@ -1266,6 +1617,7 @@ function updateBus(dt){
 
 function scene(t){
   const L=G.L;
+  OCCL=[];
   if(eventNow>=0)eventScene(eventNow,t);
   if(L.cafe){cafeReady();drawCafe(t)}
   houses:{
@@ -1274,7 +1626,7 @@ function scene(t){
   }
   for(let i=0;i<L.shops;i++)shop(i);
   TREES.forEach((t,i)=>{if(!(L.shrine>=4&&t[0]===36.1&&t[1]===11.6)&&!(L.shrine>=3&&t[0]===39.4&&t[1]===11.6))tree(t[0],t[1],.85+((i*7)%5)*.08)});
-  for(let i=0;i<L.trees;i++)for(const dx of [0,2.5]){tree(2+i*5.3+dx,22.5,.82,1)}
+  for(let i=0;i<L.trees;i++)for(const dx of [0,2.5]){const X=2+i*5.3+dx;if(L.south&&X>21&&X<33)continue;tree(X,22.5,.82,1)}
   station();
   for(const X of [2,8,14,20,26.4,31.8,37.6])streetLamp(X,6.2,-1);
   for(const X of [5,11,16.9,25.45,30.45,37])streetLamp(X,3.98,1);
@@ -1290,6 +1642,7 @@ function scene(t){
   if(n>=2){
     const endY=n>=4?20.75:16.25;
     bridge(endY);
+    OCCL.push([7.6,11.2,8.6,endY+.5,2.4,3.05]);
     stairs(11.75,8.6,10.9,.5,2.6);stairs(16.25,8.6,10.9,.5,2.6);
     if(n>=4)stairs(20.75,8.6,10.9,.5,2.6);
   }
@@ -1322,6 +1675,7 @@ function scene(t){
     }
     for(let t=0;t<n;t++){const Y=TRACKY[t];q(20,Y,()=>{c.strokeStyle="rgba(40,48,60,.65)";c.lineWidth=.8;c.beginPath();c.moveTo(px(0,Y),py(0,Y,2.28));c.lineTo(px(MAPX,Y),py(MAPX,Y,2.28));c.stroke()},900)}
   }
+  hubScene(t);
   gates(n);
 }
 
@@ -1419,7 +1773,10 @@ function arrive(t,r){
   const vis=Math.min(Math.round(alight/Math.max(1,r.cap/14)),10,Math.max(0,MAXP-people.length));
   for(let i=0;i<vis;i++){
     const x=doorX(t,STOPX+(Math.random()-.5)*t.len*.9);
-    const p=newPerson(x,edge,.5);p.delay=.4+i*.22;p.path=exitPath(plat,x,edge);p.state="walk";p.i=0;people.push(p);
+    const p=newPerson(x,edge,.5);p.delay=.4+i*.22;
+    const hx=G.L.south&&Math.random()<Math.min(.45,r.share*.35)?hubExitPath(plat):null;
+    if(hx){p.path=hx.pts;p.plat=hx.plat;p.tag=hx.tag}else p.path=exitPath(plat,x,edge);
+    p.state="walk";p.i=0;people.push(p);
   }
 }
 function doorX(t,x){const n=1+G.L.cars,x0=t.x-t.len/2;const k=Math.max(0,Math.min(n*2-1,Math.floor((x-x0)/(CAR+GAP)*2)));return x0+(k+.5)*(CAR+GAP)/2}
@@ -1431,14 +1788,15 @@ function drawTrains(){
     const expressTrain=G.L.express&&t.i===3;
     for(let k=0;k<n;k++){
       const a=x0+k*(CAR+GAP),b=a+CAR;
-      if(b<0||a>MAPX)continue;
-      q((a+b)/2,t.y,()=>expressTrain?drawBullet(t,a,b,k,n):drawCar(t,a,b,k,n,false));
+      if(b<-CAR||a>MAPX+CAR)continue;
+      const cx=(a+b)/2,al=Math.max(0,Math.min(1,(cx+CAR*.45)/(CAR*.9),(MAPX+CAR*.45-cx)/(CAR*.9)));if(al<=0)continue;
+      q((a+b)/2,t.y,()=>{c.globalAlpha=al;LALPHA=al;expressTrain?drawBullet(t,a,b,k,n):drawCar(t,a,b,k,n,false);c.globalAlpha=1;LALPHA=1});
     }
   }
 }
 /* Vysokorychlostní souprava: bílý aerodynamický vlak s dlouhým nosem na obou koncích */
 function drawBullet(t,a,b,k,n){
-  const yc=t.y,xa=Math.max(a,0),xb=Math.min(b,MAPX);
+  const MAPX=1e9,yc=t.y,xa=a,xb=b;
   if(xb-xa<.02)return;
   const hasL=k===0,hasR=k===n-1,NL=1.95;
   const star=t.sp==="hoshi";
@@ -1492,21 +1850,21 @@ function drawBullet(t,a,b,k,n){
         const d=b-.46,S=sect(d),py0=yc+dy*(S.hw/.3)*.72;
         poly([d-.1,py0-.05,S.zt-.04,d+.1,py0-.05,S.zt-.06,d+.1,py0+.05,S.zt-.06,d-.1,py0+.05,S.zt-.04],lc);
       }
-      if(on)addLight(b+.1,yc,.5,1.1,.7);
+      if(on)trainLight(b+.1,yc,.5,1.1,.7);
     }else{
       wallX(b,yc-.5,yc+.5,.3,1.62,dark(body,.32));
       wallX(b,yc-.2,yc+.2,.34,1.4,"#2a2f38");
     }
   }
   // sběrač s aerodynamickým krytem
-  if(k%3===1&&a>=0&&b<=MAPX){
+  if(k%3===1){
     const X=(a+b)/2;
     box(X-.55,yc-.26,1.72,1.1,.52,.07,"#e3e7e9");
     c.strokeStyle="#39414b";c.lineWidth=1;c.beginPath();c.moveTo(px(X,yc),py(X,yc,1.8));c.lineTo(px(X-.16,yc),py(X-.16,yc,2.06));c.lineTo(px(X,yc),py(X,yc,2.26));c.moveTo(px(X-.3,yc),py(X-.3,yc,2.26));c.lineTo(px(X+.3,yc),py(X+.3,yc,2.26));c.stroke();
   }
 }
 function drawCar(t,a,b,k,n,ex){
-  const Y0=t.y-.62,Y1=t.y+.62,xa=Math.max(a,0),xb=Math.min(b,MAPX);
+  const MAPX=1e9,Y0=t.y-.62,Y1=t.y+.62,xa=a,xb=b;
   if(xb-xa<.02)return;
   const elec=G.L.elec,R=(p,q)=>[Math.max(p,xa),Math.min(q,xb)];
   const Z0=.32,Z1=1.74,ZS=Z1-.14; // ZS: zaoblený přechod boku do střechy
@@ -1561,9 +1919,9 @@ function drawCar(t,a,b,k,n,ex){
       wallY(m-.006,m+.006,Y1,Z0+.03,Z0+1.14,dark(body,.42));
     }
   }
-  if(night>.35&&xa===a&&xb===b)addLight((a+b)/2,Y1,1,1.1,.3);
+  if(night>.35&&xa===a&&xb===b)trainLight((a+b)/2,Y1,1,1.1,.3);
   // střešní klimatizace / sběrač
-  if(a>=0&&b<=MAPX){
+  {
     box(a+CAR/2+(elec&&k%2===0?.75:0)-.5,t.y-.28,Z1,1,.56,.11,dark(rf,.14));
     if(!elec)box(a+.55,t.y-.15,Z1,.5,.3,.09,"#6d6f6a");
     if(elec&&k%2===0){
@@ -1588,10 +1946,11 @@ function drawCar(t,a,b,k,n,ex){
         poly([b,t.y-.012,Z1,b,t.y+.012,Z1,Xn,t.y+.012,Zc,Xn,t.y-.012,Zc],dark(body,.12));
         wallX(Xn,Y0+.08,Y1-.08,Z0-.02,Zc,dark(body,.24));
         wallX(Xn,Y0+.08,Y1-.08,Z0+.36,Z0+.5,dark(stripe,.14));
-        const on=t.dir>0,lc=on?"#fff3bd":"#a92f28";
+        const on=t.dir>0,lc=on?"#fff3bd":"#ff3b2f";
+        if(!on){addRedLight(Xn+.05,Y0+.23,Z0+.6,.5,.9);addRedLight(Xn+.05,Y1-.23,Z0+.6,.5,.9)}
         wallX(Xn,Y0+.12,Y0+.34,Z0+.54,Z0+.66,lc);wallX(Xn,Y1-.34,Y1-.12,Z0+.54,Z0+.66,lc);
         wallX(Xn,Y0+.06,Y1-.06,Z0-.1,Z0+.04,"#20242b");
-        if(on)addLight(Xn+.1,t.y,.7,1,.65);
+        if(on)trainLight(Xn+.1,t.y,.7,1,.65);
       }
     }else if(head){
       // čelo: tmavá plocha s velkým oknem, nápisem cíle a světly
@@ -1600,10 +1959,12 @@ function drawCar(t,a,b,k,n,ex){
       wallX(b,t.y-.28,t.y+.28,ZS-.17,ZS-.05,"#0f1216");
       textX(ex?"特急":"普通",b,t.y,ZS-.11,3.2,ex?"#ff8d5c":"#ffa94d");
       wallX(b,Y0,Y1,Z0+.28,Z0+.42,dark(stripe,.12));
-      const on=t.dir>0&&(t.phase==="in"||t.phase==="out"),lc=on?"#fff3bd":"#a92f28";
+      // vpravo je u vlaků jedoucích doleva konec soupravy: svítí červená koncová světla
+      const on=t.dir>0&&(t.phase==="in"||t.phase==="out"),tail=t.dir<0,lc=on?"#fff3bd":tail?"#ff3b2f":"#cfc8b0";
+      if(tail){addRedLight(b+.05,Y0+.18,Z0+.18,.5,.9);addRedLight(b+.05,Y1-.18,Z0+.18,.5,.9)}
       wallX(b,Y0+.09,Y0+.27,Z0+.13,Z0+.24,lc);wallX(b,Y1-.27,Y1-.09,Z0+.13,Z0+.24,lc);
       wallX(b,Y0+.04,Y1-.04,Z0-.08,Z0+.05,"#20242b");   // pluh
-      if(on)addLight(b+.1,t.y,.5,1,.65);
+      if(on)trainLight(b+.1,t.y,.5,1,.65);
     }else{
       wallX(b,t.y-.24,t.y+.24,Z0+.08,Z0+1.1,dark(body,.4)); // přechodové dveře
       wallX(b,t.y-.13,t.y+.13,Z0+.62,Z0+1.02,glass);
@@ -1680,14 +2041,17 @@ function updateAutos(dt){
     if(zebraBusy.N&&dn>=0)target=Math.min(target,dn*2.2);
     const db=a.dir>0?3.85-a.y:a.y-7.6;
     if(busCross&&db>=0)target=Math.min(target,db*2.2);
+    const dh=a.dir>0?33-a.y:a.y-36.8;
+    if(hubCross&&dh>=0)target=Math.min(target,dh*2.2);
     a.v+=(target-a.v)*Math.min(1,dt*(target<a.v?6:1.4));
     let ny=a.y+a.dir*a.v*dt;
     if(closed&&d>=0&&!a.commit)ny=a.dir>0?Math.min(ny,stopN):Math.max(ny,stopS); // stop čáru nikdy nepřejede
     if(zebraBusy.S&&dz>=0)ny=a.dir>0?Math.min(ny,zStopN):Math.max(ny,zStopS);
     if(zebraBusy.N&&dn>=0)ny=a.dir>0?Math.min(ny,z2StopN):Math.max(ny,z2StopS);
     if(busCross&&db>=0)ny=a.dir>0?Math.min(ny,3.85):Math.max(ny,7.6);
+    if(hubCross&&dh>=0)ny=a.dir>0?Math.min(ny,33):Math.max(ny,36.8);
     a.y=ny;
-    if(a.dir>0&&a.y>31||a.dir<0&&a.y<-3)respawnAuto(a);
+    if(a.dir>0&&a.y>MAPY+3||a.dir<0&&a.y<-3)respawnAuto(a);
   }
 }
 function drawVehicle(a,t){
@@ -1779,7 +2143,7 @@ function drawAutos(t){
 }
 
 /* ─────────────── LIDÉ ─────────────── */
-const MAXP=90;
+const MAXP=110;
 const OUTFIT=["#27364d","#27364d","#3d4c63","#e8e4d8","#b84a3a","#5a7d5a","#d9a13a","#7c5a86","#f0f0ea"];
 let people=[];
 function newPerson(x,y,z){
@@ -1914,6 +2278,7 @@ function drawPeople(){
       c.fillStyle=p.col;c.beginPath();c.roundRect(X-2.7,Y-12-bob,5.4,7.6,2);c.fill();
       c.fillStyle="#efc9a6";c.beginPath();c.arc(X,Y-14-bob,2.5,0,6.3);c.fill();
       c.fillStyle=p.hat?"#e6c04c":p.hair;c.beginPath();c.arc(X,Y-14.7-bob,2.5,Math.PI,0);c.fill();
+      if(p.tag){c.fillStyle=p.tag;c.beginPath();c.arc(X+3.6,Y-10-bob,1.7,0,6.3);c.fill()}
     },.02);
   }
 }
@@ -2012,7 +2377,7 @@ function updateFx(dt,now){
   }
   for(const b of bits){b.z-=dt*(b.s===3?.55:.4);b.ph+=dt*1.6;b.x+=dt*(.25+Math.sin(b.ph)*.4);b.y+=dt*(b.s===3?.05:.2)}
   bits=bits.filter(b=>b.z>0&&b.x<MAPX&&b.y<MAPY);
-  if(G.L.onsen&&!reduced&&Math.random()<dt*2)steam.push({x:(G.L.onsen>=3?3+Math.random()*3:4.4),y:G.L.onsen>=3?27:25.2,z:G.L.onsen>=3?.2:2.2,l:3});
+  if(G.L.onsen&&!reduced&&Math.random()<dt*2)steam.push({x:(G.L.onsen>=3?3+Math.random()*3:2.9+Math.random()*1.5),y:27,z:.2,l:3});
   steam.forEach(s=>{s.l-=dt;s.z+=dt*.4;s.x+=dt*.1});steam=steam.filter(s=>s.l>0);
   // kočka
   if(cat){cat.life-=dt;if(cat.life<=0)cat=null}
@@ -2121,6 +2486,7 @@ function step(dt,t){
   updatePeople(dt);
   updateRiders(dt);
   updateBus(dt);
+  updateHub(dt);
   updateCafeCats(dt);
   updateFx(dt,t);
   ambient(dt);
@@ -2135,7 +2501,7 @@ function render(t){
   if(groundDirty)buildGround();
   c.save();c.shadowColor="rgba(20,30,50,.3)";c.shadowBlur=30*S;c.shadowOffsetY=18*S;
   c.drawImage(groundCanvas,GMINX,GMINY,GW,GH);c.restore();
-  Q=[];lights=[];
+  Q=[];lights=[];redLights=[];
   scene(t);drawTrains();drawAutos(t);drawPeople();drawRiders();drawBus();
   if(cat)q(cat.x,cat.y,()=>drawCat(t),.1);
   Q.sort((a,b)=>a.k-b.k);
@@ -2159,9 +2525,15 @@ function render(t){
     }
     c.globalAlpha=1;c.globalCompositeOperation="source-over";
   }
+  if(redLights.length&&(night>.05||dusk>.05)){
+    c.globalCompositeOperation="lighter";const na=Math.min(1,Math.max(night*1.2,dusk*.6));
+    for(let i=0;i<redLights.length;i+=4){const r=redLights[i+2]*30;c.globalAlpha=redLights[i+3]*na;c.drawImage(glowRed,redLights[i]-r,redLights[i+1]-r,r*2,r*2)}
+    c.globalAlpha=1;c.globalCompositeOperation="source-over";
+  }
   drawFireworks();
   drawFx();
 }
+const glowRed=(()=>{const g=document.createElement("canvas");g.width=g.height=64;const x=g.getContext("2d"),r=x.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,"rgba(255,90,70,.95)");r.addColorStop(.3,"rgba(255,40,30,.35)");r.addColorStop(1,"rgba(255,20,20,0)");x.fillStyle=r;x.fillRect(0,0,64,64);return g})();
 const glow=(()=>{const g=document.createElement("canvas");g.width=g.height=64;const x=g.getContext("2d"),r=x.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,"rgba(255,214,130,.85)");r.addColorStop(.35,"rgba(255,190,100,.28)");r.addColorStop(1,"rgba(255,170,80,0)");x.fillStyle=r;x.fillRect(0,0,64,64);return g})();
 
 /* ─────────────── ZVUK ─────────────── */
@@ -2213,7 +2585,8 @@ const rowsEl={};
 function renderList(){
   const el=$("list");el.innerHTML="";
   for(const k in rowsEl)delete rowsEl[k];
-  UPG.filter(u=>u.tab===tab).sort((a,b)=>{const am=G.L[a.id]>=a.max,bm=G.L[b.id]>=b.max;if(am!==bm)return am-bm;return costOf(a,G.L[a.id])-costOf(b,G.L[b.id])}).forEach(u=>{
+  if(tab===3){const s=document.createElement("div");s.id="hubStat";s.className="hubStat";el.appendChild(s)}
+  UPG.filter(u=>u.tab===tab&&!(tab===3&&!hubOpen())).sort((a,b)=>{const am=G.L[a.id]>=a.max,bm=G.L[b.id]>=b.max;if(am!==bm)return am-bm;return costOf(a,G.L[a.id])-costOf(b,G.L[b.id])}).forEach(u=>{
     const d=document.createElement("article");d.className="tk";
     const h=document.createElement("h3");h.textContent=u.name;const s=document.createElement("span");s.textContent=u.jp;h.appendChild(s);
     const p=document.createElement("p");
@@ -2236,7 +2609,7 @@ function buy(u){
   floats.push({x:u.at[0],y:u.at[1],z:2.4,txt:u.name,life:2.8});
   blip();
   renderList();saveCloud();
-  if(Object.values(G.L).reduce((a,b)=>a+b,0)===MAXSUM)toast("Hotovo: stanice Komorebi je kompletní. Sedni si a dívej se na vlaky.",7000);
+  checkFinale();
 }
 function blip(){note(587.33,0,.5,.05,"triangle");note(880,.09,.7,.04,"triangle")}
 function hintText(r){
@@ -2252,10 +2625,10 @@ function updateUI(){
   const r=rates(G.L),m=G.money;
   $("money").textContent=yen(m);
   const flowNow=Math.min(r.demand*(eventNow>=0?EVENT_BOOST:1),r.capRate);
-  $("rate").textContent="≈ "+yen(flowNow*(r.fare+r.spend)*60)+" za minutu";
+  $("rate").textContent="≈ "+yen(flowNow*(r.fare+r.spend)*60+r.hubPerMin)+" za minutu";
   const sum=Object.values(G.L).reduce((a,b)=>a+b,0);
   let rank=RANKS[0][1];for(const [n,t] of RANKS)if(sum>=n&&t)rank=t;
-  $("rank").textContent=rank+" · "+sum+" z "+MAXSUM+" vylepšení";
+  $("rank").textContent=sum===MAXSUM?"★ Legendární stanice údolí · vše postaveno":rank+" · "+sum+" z "+MAXSUM+" vylepšení";
   const hh=Math.floor(hour),mm=Math.floor((hour%1)*60);
   $("clock").textContent=seasonName+" · "+hh+":"+String(mm).padStart(2,"0");
   $("waitChip").textContent="Na peronu "+Math.floor(G.waiting);
@@ -2263,8 +2636,11 @@ function updateUI(){
   ec.hidden=eventNow<0;
   if(eventNow>=0){const e=EVENTS[eventNow],t=e.jp+" "+e.name+" · +30 % lidí";if(ec.textContent!==t)ec.textContent=t}
   $("totals").textContent="Přepraveno "+nf.format(Math.floor(G.pax))+" lidí";
-  $("hint").textContent=hintText(r);
-  let total=0;const per=[0,0,0];
+  $("hint").textContent=tab===3?hubHint(r):hintText(r);
+  if(tab===3)updateHubStat(r);
+  const t3=$("tab3");if(t3){t3.classList.toggle("locked",!hubOpen());t3.title=hubOpen()?"":"Odemkne se, až město vyroste"}
+  const wasOpen=hubOpen();checkHubUnlock();checkFinale();if(!wasOpen&&hubOpen()&&tab===3)renderList();
+  let total=0;const per=TABS.map(()=>0);
   UPG.forEach(u=>{const l=G.L[u.id];if(l<u.max&&(!u.req||u.req(G.L))&&m>=costOf(u,l)){per[u.tab]++;total++}});
   TABS.forEach((_,i)=>{const d=document.querySelector("#tab"+i+" .dot");if(d)d.textContent=per[i]||""});
   $("openCount").textContent=total?" "+total:"";
@@ -2272,8 +2648,8 @@ function updateUI(){
     const u=UPGMAP[id],e=rowsEl[id],l=G.L[id],max=l>=u.max;
     e.d.classList.toggle("maxed",max);
     const lock=u.req&&!u.req(G.L);
-    const txt=lock?u.reqText:u.desc;
-    if(e.p.textContent!==txt)e.p.textContent=txt;
+    const txt=lock?u.reqText:u.tab===3&&!max?u.desc+" "+gainText(u):u.desc;
+    if(e.p._t!==txt){e.p._t=txt;e.p.innerHTML=txt}
     [...e.pips.children].forEach((x,i)=>x.classList.toggle("on",i<l));
     const label=max?"Hotovo":lock?"Zamčeno":yen(costOf(u,l));
     if(e.b.textContent!==label)e.b.textContent=label;
@@ -2352,22 +2728,725 @@ function resetGame(){
   kazeIn=200+Math.random()*100;hoshiIn=240+Math.random()*120;
   autos.forEach(a=>{if(a.m==="hayate")pickCar(a);a.commit=false});
   trains.forEach((t,i)=>{t.phase="wait";t.t=0;t.x=-30;t.sp=null;t.dir=i%2?-1:1;t.wait=i===0?2.5:6+i*5.5});
-  seedStart();
+  seedStart();resetHub();syncMap();
   groundDirty=true;tab=0;buildTabs();renderList();saveCloud();
   toast("Hra začíná znovu od první zastávky.",3500);
 }
+// novou hru hráč začne z úvodní obrazovky, v panelu je jen návrat do menu
 function wireReset(){
-  const w=$("resetWrap");
-  w.innerHTML='<button id="resetBtn" class="resetMain" type="button">Reset hry</button>';
-  $("resetBtn").onclick=()=>{
-    w.innerHTML='<span class="resetAsk">Smazat všechna vylepšení a peníze?</span> <button id="resetYes" class="danger" type="button">Ano, resetovat</button> <button id="resetNo" type="button">Zrušit</button>';
-    $("resetNo").onclick=wireReset;
-    $("resetNo").focus();
-    $("resetYes").onclick=()=>{resetGame();wireReset()};
-  };
+  $("resetWrap").innerHTML='<button id="menuBtn" class="menuMain" type="button">Menu</button>';
+  $("menuBtn").onclick=openTitle;
 }
 addEventListener("pagehide",writeLocal);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)saveCloud()});
+
+function drawHubCar(cx,cy,ang,tr,cab,headFront,moving){
+  ROT=Math.abs(ang)>.002?{cx,cy,c:Math.cos(ang),s:Math.sin(ang)}:null;
+  const st=STYLE[tr.liv%STYLE.length],K=st.kind;
+  const a=cx-CAR/2,b=cx+CAR/2,TY=cy,Y0=TY-.6,Y1=TY+.6,Z0=.32,Z1=st.Z1,ZS=Z1-.13-st.round*.6,inset=.12+st.round;
+  const [b0,stripe,low]=LIVERY[tr.liv%LIVERY.length],grime=(1-tr.clean)*.5;
+  const body=mix(b0,"#8a7f6a",grime),rf=mix(K==="steel"?"#b9bec2":"#9a9a8e","#6d6a60",grime),glass=mix("#33475a","#ffe7a0",night*.9);
+  // aerodynamický nos rychlíku: horní část bočnice končí dřív a čelo je šikmé
+  const nose=K==="express"&&cab,bn=nose?b-.95:b;
+  poly([a,Y1,.03,b,Y1,.03,b,Y1+.16,.02,a,Y1+.16,.02],"rgba(15,20,30,.2)");
+  top(a,Y0+inset,Z1,bn-a,Y1-Y0-inset*2,rf);
+  poly([a,Y1,ZS,bn,Y1,ZS,bn,Y1-inset,Z1,a,Y1-inset,Z1],dark(rf,.1));
+  wallY(a,b,Y1-.04,.18,Z0,"#2a2e36");
+  for(const ccx of [a+.62,b-.62])for(const off of [-.2,.2]){const wx=ccx+off;c.save();c.transform(1,.5,0,1,px(wx,Y1),py(wx,Y1,.15));c.fillStyle="#191c22";c.beginPath();c.arc(0,0,3.3,0,6.3);c.fill();c.restore()}
+  // bočnice
+  if(nose)poly([a,Y1,Z0,b,Y1,Z0,b,Y1,Z0+.52,bn,Y1,ZS,a,Y1,ZS],dark(body,.06));else wallY(a,b,Y1,Z0,ZS,dark(body,.06));
+  const lowC=mix(low,"#6a5f4c",grime),strC=mix(stripe,"#5f5a4c",grime);
+  if(K==="retro"){
+    wallY(a,b,Y1,Z0,Z0+.42,lowC);wallY(a,b,Y1,Z0+.44,Z0+.5,strC);
+    for(let x=a+.8;x<b-.9;x+=.48)wallY(x,x+.32,Y1,Z0+.62,Z0+1.0,glass);
+    for(const u of [.22,3.16]){const p=a+u,qq=p+.42;wallY(p,qq,Y1,Z0+.02,Z0+1.1,dark(body,.18));wallY(p+.08,qq-.08,Y1,Z0+.6,Z0+.98,glass)}
+  }else if(K==="steel"){
+    // nerez: svislé prolisy, barevné pruhy nad okny i pod nimi, dvoje posuvné dveře
+    for(let x=a+.15;x<b;x+=.18)wallY(x,x+.02,Y1+.001,Z0+.05,ZS-.05,dark(body,.1));
+    wallY(a,b,Y1+.002,Z0+.22,Z0+.3,strC);wallY(a,b,Y1+.002,ZS-.2,ZS-.12,strC);
+    for(const [p,qq] of [[a+.15,a+1.05],[a+1.55,a+2.3],[a+2.8,b-.5]])wallY(p,qq,Y1+.003,Z0+.48,Z0+1.0,glass);
+    for(const p of [a+1.1,a+2.35]){wallY(p,p+.42,Y1+.003,Z0+.02,Z0+1.12,dark(body,.22));wallY(p+.06,p+.36,Y1+.004,Z0+.55,Z0+1.02,glass);wallY(p-.03,p,Y1+.004,Z0+.02,Z0+1.12,"#e9c63c")}
+  }else if(K==="view"){
+    // vyhlídkový vůz: dřevěný spodek, zlatý pruh a panoramatická okna až pod střechu
+    wallY(a,b,Y1,Z0,Z0+.34,lowC);wallY(a,b,Y1,Z0+.34,Z0+.4,strC);
+    for(let x=a+.75;x<b-.35;x+=1.0)wallY(x,x+.92,Y1+.002,Z0+.48,ZS-.04,glass);
+    wallY(a+.18,a+.6,Y1+.002,Z0+.02,Z0+1.2,dark(body,.2));wallY(a+.25,a+.53,Y1+.003,Z0+.55,Z0+1.1,glass);
+    textY("かもめ",a+2.2,Y1+.004,Z0+.2,5,"#f2d27a");
+  }else if(K==="commuter"){
+    // příměstská jednotka: troje dveře a menší okna mezi nimi
+    wallY(a,b,Y1,Z0,Z0+.38,lowC);wallY(a,b,Y1,Z0+.38,Z0+.46,strC);
+    for(const [p,qq] of [[a+.75,a+1.45],[a+2.05,a+2.85]])wallY(p,qq,Y1+.002,Z0+.58,Z0+1.02,glass);
+    wallY(b-.4,b-.12,Y1+.002,Z0+.58,Z0+1.02,glass);
+    for(const p of [a+.28,a+1.55,a+2.92]){wallY(p,p+.4,Y1+.003,Z0+.02,Z0+1.12,dark(body,.2));wallY(p+.06,p+.34,Y1+.004,Z0+.58,Z0+1.02,glass)}
+  }else{
+    // rychlík: souvislý pás oken, dvojitá linka a jedny dveře
+    wallY(a,bn+.3,Y1+.002,Z0+.6,Z0+.98,glass);
+    wallY(a,b,Y1+.002,Z0+.3,Z0+.36,strC);wallY(a,b,Y1+.002,Z0+.4,Z0+.44,lowC);
+    wallY(a+.25,a+.62,Y1+.003,Z0+.02,Z0+1.12,dark(body,.18));
+  }
+  if(night>.35)addLight(cx,Y1,1,1.1,.3);
+  // střešní výbava
+  if(K==="retro"){box(a+.5,TY-.08,Z1,.14,.14,.32,"#3b3f46");box(b-.7,TY-.12,Z1,.3,.24,.12,"#cfd3d6")}
+  else if(K==="steel")box(a+.9,TY-.28,Z1,2.0,.56,.14,dark(rf,.1));
+  else if(K==="commuter")for(const p of [a+.5,a+2.3])box(p,TY-.25,Z1,1.0,.5,.12,dark(rf,.16));
+  else if(K==="express")box(a+.3,TY-.3,Z1,bn-a-.4,.6,.06,dark(rf,.06));
+  else if(K==="view")top(a+.2,TY-.12,Z1+.002,bn-a-.4,.24,mix("#7e95a6","#ffe7a0",night*.7));
+  // čelo nebo přechodová stěna
+  if(nose){
+    wallX(b,Y0,Y1,Z0,Z0+.52,dark(body,.24));
+    poly([b,Y0+.04,Z0+.52,b,Y1-.04,Z0+.52,bn,Y1-inset,Z1,bn,Y0+inset,Z1],dark(body,.12));
+    poly([b-.25,Y0+.16,Z0+.72,b-.25,Y1-.16,Z0+.72,bn+.1,Y1-inset-.04,Z1-.08,bn+.1,Y0+inset+.04,Z1-.08],mix("#2c3d4c","#c9b477",night*.5));
+    wallX(b+.002,Y0,Y1,Z0+.14,Z0+.2,strC);
+    const lc=headFront?"#fff3bd":"#ff3b2f";
+    wallX(b+.003,Y0+.08,Y0+.26,Z0+.3,Z0+.4,lc);wallX(b+.003,Y1-.26,Y1-.08,Z0+.3,Z0+.4,lc);
+    if(headFront&&moving)addLight(b+.1,TY,.5,1.1,.7);else if(!headFront)addRedLight(b+.05,TY,Z0+.35,.8,.9);
+  }else{
+    wallX(b,Y0,Y1,Z0,ZS,dark(body,.24));
+    poly([b,Y0+inset,Z1,b,Y1-inset,Z1,b,Y1,ZS,b,Y0,ZS],dark(rf,.28));
+    if(cab){
+      const lc=headFront?"#fff3bd":"#ff3b2f",win=mix("#2c3d4c","#c9b477",night*.5);
+      if(K==="retro"){
+        for(const [p,qq] of [[Y0+.1,TY-.2],[TY-.15,TY+.15],[TY+.2,Y1-.1]])wallX(b,p,qq,Z0+.62,ZS-.1,win);
+        wallX(b,Y0,Y1,Z0,Z0+.42,dark(low,.2));
+        const X=px(b,TY),Y=py(b,TY,ZS+.08);c.fillStyle=headFront?"#fff3bd":"#e8e0c8";c.beginPath();c.arc(X,Y,2.4,0,6.3);c.fill();
+        wallX(b,Y0+.1,Y0+.22,Z0+.2,Z0+.3,lc);wallX(b,Y1-.22,Y1-.1,Z0+.2,Z0+.3,lc);
+      }else if(K==="steel"){
+        wallX(b,Y0+.04,Y1-.04,Z0+.45,ZS-.04,"#15181d");
+        wallX(b+.002,Y0+.12,Y1-.12,Z0+.6,ZS-.22,win);
+        wallX(b+.003,TY-.3,TY+.3,ZS-.2,ZS-.08,"#1d2026");textX("快速",b+.004,TY,ZS-.14,3.4,"#ffb347");
+        wallX(b,Y0,Y1,Z0+.22,Z0+.3,strC);
+        wallX(b+.003,Y0+.08,Y0+.3,Z0+.32,Z0+.42,lc);wallX(b+.003,Y1-.3,Y1-.08,Z0+.32,Z0+.42,lc);
+      }else if(K==="view"){
+        wallX(b+.002,Y0+.06,Y1-.06,Z0+.45,ZS-.02,win);
+        wallX(b,Y0,Y1,Z0,Z0+.34,lowC);wallX(b+.002,Y0,Y1,Z0+.34,Z0+.4,strC);
+        wallX(b+.003,Y0+.06,Y0+.22,Z0+.12,Z0+.24,lc);wallX(b+.003,Y1-.22,Y1-.06,Z0+.12,Z0+.24,lc);
+      }else{
+        // přechodové dveře uprostřed čela, okna po stranách, světla nahoře
+        wallX(b,Y0+.08,TY-.22,Z0+.62,ZS-.12,win);wallX(b,TY+.22,Y1-.08,Z0+.62,ZS-.12,win);
+        wallX(b+.002,TY-.18,TY+.18,Z0+.02,ZS-.04,dark(body,.32));wallX(b+.003,TY-.12,TY+.12,Z0+.62,ZS-.14,win);
+        wallX(b,Y0,Y1,Z0,Z0+.38,dark(low,.15));
+        wallX(b+.003,Y0+.06,Y0+.2,ZS-.08,ZS+.02,lc);wallX(b+.003,Y1-.2,Y1-.06,ZS-.08,ZS+.02,lc);
+      }
+      if(headFront&&moving)addLight(b+.1,TY,.5,1.1,.7);else if(!headFront)addRedLight(b+.05,TY,Z0+.35,.8,.9);
+    }else wallX(b,TY-.22,TY+.22,Z0+.08,Z0+1.06,dark(body,.38));
+  }
+  ROT=null;
+}
+function drawHubBus(a){
+  const L=BUS_L,B=a.x-L/2,xe=a.x+L/2,y0=a.lane-.48,y1=a.lane+.48,zb=.2,zs=1.6,zt=1.74;
+  const white="#f3f4ef",band=a.col,glass=mix("#2f4252","#ffe7a0",night*.85);
+  // l se měří od předku dozadu
+  const CW=(l0,l1,z0,z1,f)=>wallY(xe-l1,xe-l0,y1,z0,z1,f),X=l=>xe-l;
+  poly([B,y1,.02,xe,y1,.02,xe,y1+.2,.01,B,y1+.2,.01],"rgba(15,20,30,.24)");
+  top(B,y0+.1,zt,L,y1-y0-.2,roofC("#e6e8e3"));
+  poly([B,y1,zs,xe,y1,zs,xe,y1-.1,zt,B,y1-.1,zt],roofC("#d8dbd6"));
+  CW(0,L,zb,zs,dark(white,.05));
+  CW(0,L,zb,.22,"#20242b");
+  CW(0,L,.26,.6,band);
+  poly([X(2.6),y1,.6,X(L),y1,.6,X(L),y1,.86,X(3.2),y1,.86],band);
+  poly([X(L),y1,.92,X(3.2),y1,.92,X(2.6),y1,.66,X(0),y1,.64,X(0),y1,.6,X(2.6),y1,.62,X(3.2),y1,.88,X(L),y1,.88],"#e0a93a");
+  CW(.02,L-.08,.92,1.42,glass);
+  CW(0,.2,.58,1.5,glass);
+  for(let l=.5;l<L-.1;l+=.56)CW(l-.015,l+.015,.92,1.42,dark(white,.08));
+  CW(1,1.85,1.45,1.58,"#14171c");
+  textY(a.dest,X(1.42),y1,1.515,4.6,"#ffa94d");
+  for(const l of [.95,2.85]){
+    c.save();c.transform(1,.5,0,1,px(X(l),y1),py(X(l),y1,.17));
+    c.fillStyle="#23272e";c.beginPath();c.arc(0,0,5.6,Math.PI,0);c.lineTo(5.6,3.4);c.lineTo(-5.6,3.4);c.closePath();c.fill();
+    c.fillStyle="#14161a";c.beginPath();c.arc(0,0,4.3,0,6.3);c.fill();
+    c.fillStyle="#aeb3b7";c.beginPath();c.arc(0,0,1.9,0,6.3);c.fill();c.restore();
+  }
+  box(xe+.04,y1-.02,1.28,.1,.05,.24,"#20242b");
+  box(X(2.85),y0+.27,zt,1.55,.51,.13,roofC("#cfd3cf"));
+  box(X(3.44),y0+.38,zt,.34,.29,.07,roofC("#bcc1be"));
+  // čelo: velké sklo, cílová tabule, světla
+  wallX(xe,y0,y1,zb,zs,dark(white,.24));
+  wallX(xe,y0,y1,zb,.26,"#1b1e24");
+  poly([xe,y0,zs,xe,y1,zs,xe,y1-.1,zt,xe,y0+.1,zt],roofC("#b7bab5"));
+  wallX(xe,y0,y1,.3,.6,dark(band,.22));
+  wallX(xe,y0+.06,y1-.06,.66,1.38,glass);
+  wallX(xe,y0+.2,y1-.2,1.42,1.56,"#14171c");
+  textX(a.dest,xe,(y0+y1)/2,1.49,3.6,"#ffa94d");
+  const hl=mix("#fff6cf","#ffffff",night);
+  for(const [p,r] of [[y0+.04,y0+.16],[y1-.16,y1-.04]])wallX(xe,p,r,.38,.5,hl);
+  wallX(xe,(y0+y1)/2-.11,(y0+y1)/2+.11,.3,.4,"#22242a");
+  wallX(xe,(y0+y1)/2-.07,(y0+y1)/2+.07,.33,.37,"#f4d240");
+  if(night>.25){addLight(X(1.2),y1,1.15,1.2,.32);addLight(X(2.8),y1,1.15,1.2,.32);addLight(xe+.3,a.lane,.4,1.1,.62)}
+}
+
+
+/* ─────────────── ÚVODNÍ OBRAZOVKA ─────────────── */
+let titleSave=false;
+function titleFit(){
+  const svg=$("titleArt");if(!svg)return;
+  const a=innerWidth/Math.max(1,innerHeight);
+  if(a>=1.3){svg.setAttribute("viewBox","0 0 1600 900");return}
+  if(a>=1){const w=900*a,x=Math.max(0,Math.min(1600-w,860-w/2));svg.setAttribute("viewBox",x+" 0 "+w+" 900");return}
+  // na výšku: výpravčí a kočka uprostřed, nahoře obloha pro logo, dole nástupiště pro menu
+  const h=Math.max(1330,660/a),w=Math.min(1600,h*a),y=1300-h;
+  svg.setAttribute("viewBox",(880-w/2)+" "+y+" "+w+" "+h);
+}
+function titleInfo(){
+  const sum=Object.values(G.L).reduce((a,b)=>a+b,0);
+  let rank=RANKS[0][1];for(const [n,t] of RANKS)if(sum>=n&&t)rank=t;
+  $("tContInfo").textContent=titleSave?rank+" · "+yen(G.money):"Zatím žádná uložená hra";
+  $("tCont").disabled=!titleSave;
+  $("tCont").classList.toggle("primary",titleSave);
+  $("tNew").classList.toggle("primary",!titleSave);
+}
+function closeTitle(){$("title").hidden=true;removeEventListener("resize",titleFit)}
+function titleInit(hasSave){
+  titleSave=hasSave;
+  const T=$("title");T.hidden=false;titleFit();addEventListener("resize",titleFit);
+  const pet=$("tPetals");
+  if(!pet.children.length&&!reduced)for(let i=0;i<22;i++){const e=document.createElement("i");
+    e.style.left=(Math.random()*105)+"%";e.style.animationDuration=(7+Math.random()*7)+"s";e.style.animationDelay=(-Math.random()*12)+"s";
+    e.style.transform="scale("+(.7+Math.random()*.6)+")";pet.appendChild(e)}
+  titleInfo();
+  $("tCont").onclick=()=>{if(titleSave)closeTitle()};
+  $("tNew").onclick=()=>{
+    if(!titleSave){closeTitle();toast("Vítej v Komorebi. První vlak už přijíždí.",4000);return}
+    $("tConfirm").hidden=false;$("tNo").focus();
+  };
+  $("tNo").onclick=()=>{$("tConfirm").hidden=true;$("tNew").focus()};
+  $("tYes").onclick=()=>{$("tConfirm").hidden=true;resetGame();titleSave=false;closeTitle()};
+  $("tHelp").onclick=()=>{$("tHelpBox").hidden=false;$("tHelpClose").focus()};
+  $("tHelpClose").onclick=()=>{$("tHelpBox").hidden=true;$("tHelp").focus()};
+  if(!T.dataset.keys){T.dataset.keys=1;T.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("tHelpBox").hidden)$("tHelpClose").click();else if(!$("tConfirm").hidden)$("tNo").click()}})}
+  setTimeout(()=>{const b=titleSave?$("tCont"):$("tNew");try{b.focus({preventScroll:true})}catch(e){}},60);
+}
+// uložená hra může dorazit až z cloudu
+function titleHasSave(){if($("title").hidden)return;titleSave=true;titleInfo()}
+// tlačítko Menu v panelu vrátí hráče na úvodní obrazovku (rozehraná hra se uloží)
+function openTitle(){saveCloud();$("tConfirm").hidden=true;$("tHelpBox").hidden=true;titleInit(true)}
+
+/* ─────────────── SLAVNOSTNÍ DOKONČENÍ STANICE ─────────────── */
+let finaleT=0;
+const allBuilt=()=>Object.values(G.L).reduce((a,b)=>a+b,0)===MAXSUM;
+function fanfare(){[0,2,4,5,7,5,7].forEach((d,i)=>note(SCALE[d],i*.16,.5,.055,"triangle"));note(SCALE[7]*2,1.2,1.4,.045,"triangle")}
+function checkFinale(){
+  if(G.done||!allBuilt()||!$("title").hidden||!$("hubNews").hidden||!$("finale").hidden)return;
+  G.done=true;saveCloud();showFinale();
+}
+function showFinale(){
+  const F=$("finale");F.hidden=false;fanfare();
+  $("finMoney").textContent=yen(G.total);
+  $("finPax").textContent=nf.format(Math.floor(G.pax))+" lidí";
+  const d=Math.max(1,Math.floor(G.clock));$("finDays").textContent=d+(d===1?" den":d<5?" dny":" dní");
+  const conf=$("finConf");conf.innerHTML="";
+  if(!reduced)for(let i=0;i<46;i++){const e=document.createElement("i");
+    e.style.left=Math.random()*100+"%";e.style.background=["#ff8fb0","#1f8a78","#f2c94c","#7fb8e6","#ffffff","#e8667a"][i%6];
+    e.style.animationDuration=(3+Math.random()*4)+"s";e.style.animationDelay=(-Math.random()*6)+"s";conf.appendChild(e)}
+  $("finFw").focus();
+  $("finClose").onclick=()=>{F.hidden=true};
+  // ohňostroj se odpálí večer, aby byl vidět
+  $("finFw").onclick=()=>{F.hidden=true;const h=(G.clock%1)*24;if(h>5.5&&h<19.8)G.clock=Math.floor(G.clock)+20.3/24;updatePalette();finaleT=50;fwIn=0;
+    toast("Slavnostní ohňostroj pro nejrušnější stanici údolí!",4500);if(soundOn)melody()};
+}
+
+/* ─────────────── PŘESTUPNÍ UZEL: JIŽNÍ VÝCHOD ─────────────── */
+// Jižní východ rozšíří pozemek o pruh na jihu. Na novém náměstí končí autobusy, místní dráha Yamabiko a soukromá dráha Komichi.
+const MAPY_HUB=36.6;
+const H_DOOR={x:26.6,y:24.85};               // dveře jižního východu
+const H_PL={x0:9,x1:21.2,y0:29.95,y1:31.65,z:.4};  // ostrovní nástupiště terminálu
+const H_YA=29.2,H_KO=32.4,H_ST0=34,H_ST1=35.8,H_LANE=34.45,H_END=20.9;
+const HUB_LINES={
+  BK:{name:"Kawabe",kj:"川",col:"#1f8a78",dest:"KAWABE"},
+  BO:{name:"Onsen",kj:"湯",col:"#c9586e",dest:"ONSEN"},
+  SA:{name:"Sakuradai",kj:"桜",col:"#7c5a86",dest:"SAKURA"},
+  YA:{name:"Místní",kj:"山",col:"#8e2f2f"},
+  KO:{name:"Komichi",kj:"道",col:"#d9792a"},
+};
+const HUB_BAYS=[{x:23.6,ln:"BK"},{x:27.1,ln:"BO"},{x:30.5,ln:"SA"}];
+let ROT=null;const BUS_L=3.9;
+const STYLE=[{kind:"retro",Z1:1.58,round:.2},{kind:"steel",Z1:1.66,round:.08},{kind:"view",Z1:1.82,round:.06},{kind:"commuter",Z1:1.68,round:.1},{kind:"express",Z1:1.62,round:.16}];
+const LIVERY=[["#f4ead2","#e08a2a","#7a4a2a"],["#d5dadd","#2d6f9e","#e9c63c"],["#8e2f2f","#d9b25a","#5a3a2a"],["#f3efe4","#3f7a3e","#c9902a"],["#eef1f4","#7c5a86","#d26a8c"],["#efe6cc","#2f6b4f","#5e3e26"]];
+STYLE.push({kind:"retro",Z1:1.58,round:.2}); // 5: historická tramvaj Komichi
+const HCL=CAR+.1;
+
+// plynulost a přestupy jsou součástí rates(); tady jsou jen pomocné výpočty
+function hubPlyn(L){return L.south?Math.min(1,.5+.08*L.takt+.08*L.info+.08*L.cover+.1*L.hall):0}
+function hubShare(L){return L.south?.1*L.busterm+.15*L.yama+.2*L.komichi:0}
+
+function syncMap(){
+  const m=G.L.south?MAPY_HUB:28;
+  if(m!==MAPY){MAPY=m;GMINX=-MAPY*HW-GPAD;GW=(MAPX+MAPY)*HW+GPAD*2;GH=(MAPX+MAPY)*HH+GPAD*2+60;groundDirty=true}
+}
+
+/* ── země ── */
+function hubGround(g){
+  const L=G.L;if(!L.south)return;
+  const paving=mix("#d3c9b2","#e8eaea",snow*.6),pv=dark(paving,.07),asphalt=mix("#7b8088","#b9bfc4",snow*.7),lineC=mix("#e9e5d3","#ffffff",snow);
+  // náměstí jižního východu
+  top(21.6,22.3,0,10.9,11.3,paving);
+  for(let x=21.6;x<32.5;x+=1.55)top(x,22.3,.002,.04,11.3,pv);
+  for(let y=22.3;y<33.6;y+=1.3)top(21.6,y,.002,10.9,.04,pv);
+  top(26.1,24.9,.003,1,8.7,dark(paving,.04)); // hlavní pěšina k autobusům
+  // jižní ulice s křižovatkou
+  const curb=mix("#c3bcae","#e4e6e6",snow*.6);
+  top(0,H_ST0,0,MAPX,H_ST1-H_ST0,asphalt);
+  // chodníky podél nových silnic: obě strany jižní ulice a silnice k přejezdu až ke křižovatce
+  const sw=mix("#cfcbc0","#eceeee",snow*.7),seg=(x,y,dx,dy)=>box(x,y,0,dx,dy,.05,sw,dark(sw,.12));
+  seg(0,33.6,33,.4);seg(35,33.6,5,.4);seg(0,35.8,33,.55);seg(35,35.8,5,.55);
+  {const sY=TRACKY[G.L.tracks]+.95;seg(32.5,sY,.5,33.6-sY);seg(35,sY,.5,33.6-sY)} // chodníky začínají hned za přejezdem
+  // přechody pro chodce přes jižní ulici u křižovatky
+  for(const x0 of [32.05,35.2])for(let y=34.08;y<35.7;y+=.34)top(x0,y,.006,.75,.18,lineC);
+  // pozemek a parkoviště konbini
+  if(L.konbini){
+    top(35.5,28.2,.004,4.5,5.4,mix("#b3b1aa","#e2e4e4",snow*.6));
+    if(L.konbini>=2)for(let x=36.15;x<=39.8;x+=1.2)top(x,31.4,.007,.06,2,lineC);
+  }
+  for(let x=.6;x<MAPX;x+=2.2){if(x>31.6&&x<35.8)continue;top(x,34.87,.006,1.1,.06,lineC)}
+  for(const b of HUB_BAYS.slice(0,L.busterm)){top(b.x-1.9,H_ST0+.05,.006,3.8,.05,"#e9c63c");top(b.x-1.9,H_ST0+.85,.006,3.8,.05,"#e9c63c");textY("BUS",b.x,H_ST0+.45,.01,7,"rgba(233,198,60,.9)","700 ")}
+  // koleje terminálu
+  const bal=mix("#8d8678","#c9cac8",snow*.65),sl=mix("#5d4a39","#8a837b",snow*.4);
+  const rail=(Y,narrow)=>{const w=narrow?.24:.33;top(0,Y-.62,0,H_PL.x1+.3,1.24,bal);
+    for(let x=.2;x<H_PL.x1;x+=.55)top(x,Y-(narrow?.4:.52),.02,.2,narrow?.8:1.04,sl);
+    top(0,Y-w-.04,.04,H_PL.x1+.1,.07,"#5c6068");top(0,Y+w-.03,.04,H_PL.x1+.1,.07,"#5c6068")};
+  if(L.yama)rail(H_YA,false);
+  if(L.komichi)rail(H_KO,true);
+}
+
+/* ── stavby ── */
+function hubScene(t){
+  const L=G.L;if(!L.south)return;
+  // budova jižního východu
+  q(26.5,23.6,()=>{
+    const w=mix("#efe8da","#f6f3ec",snow*.3),x0=23.4,x1=29.6,y0=22.5,y1=24.7;
+    box(x0,y0,0,x1-x0,y1-y0,1.6,w);
+    wallY(x0,x1,y1,0,.3,dark(w,.3));
+    for(let x=x0+.5;x<x1-.4;x+=1.3)if(x<25.9||x>27.3)winY(x,x+.75,y1,.6,1.25);
+    wallY(25.95,27.25,y1+.003,0,1.3,mix("#3b4656","#ffe39a",night*.9));
+    for(let x=26.2;x<27.25;x+=.42)wallY(x,x+.04,y1+.004,0,1.3,"#7a838c");
+    winX(x1,y0+.5,y0+1.6,.6,1.25);
+    roof(x0-.15,y0-.15,1.6,x1-x0+.3,y1-y0+.3,.75,"#3f4d63",{along:"x",wall:w,ov:.25});
+    wallY(24.6,28.6,y1+.22,1.62,2.0,"#fbfcfa");wallY(24.6,28.6,y1+.225,1.62,1.68,"#1f8a78");
+    textY("木漏れ日 · 南口",26.6,y1+.23,1.84,8,"#1c2a3f");
+    if(night>.2)addLight(26.6,y1+.3,.9,1.5,.7);
+  });
+  // pár stromů a laviček na náměstí
+  bench(23.2,26,0);bench(29.6,26,0);flower(22.1,25.1,0);flower(31.6,25.1,0);
+  lamp(22.4,28.4,0);lamp(31.5,28.4,0);
+  for(const x of [6,16,38])streetLamp(x,33.75,1);
+  // terminál
+  if(L.yama||L.komichi){
+    const P=H_PL,f=mix("#c9c7c0","#eef0f1",snow*.8);
+    Q.push({k:STRIP(P.y0)*10000-500,fn:()=>{
+      box(P.x0,P.y0,0,P.x1-P.x0,P.y1-P.y0,P.z,f,"#a8a59b");
+      top(P.x0,P.y0+.12,P.z,P.x1-P.x0,.12,"#e9c63c");top(P.x0,P.y1-.24,P.z,P.x1-P.x0,.12,"#e9c63c");
+      // nájezd z náměstí
+      poly([P.x1,P.y0+.3,P.z,P.x1+.9,P.y0+.3,0,P.x1+.9,P.y1-.3,0,P.x1,P.y1-.3,P.z],dark(f,.05));
+    }});
+    const ym=(P.y0+P.y1)/2;
+    for(let x=12;x<=20;x+=4)q(x,ym,()=>box(x-.05,ym-.05,P.z,.1,.1,1.45,"#4a5666"));
+    q(16,ym,()=>{const rc=roofC("#7a4a3a");box(11.3,P.y0+.25,P.z+1.45,9.4,P.y1-P.y0-.5,.09,rc,"#4a3328");
+      if(night>.15)for(let x=13;x<20;x+=3.5)addLight(x,ym,1.8,.9,.55)},500);
+    q(18,ym,()=>{box(17.45,ym,P.z,.06,.06,1,"#3b4656");box(18.45,ym,P.z,.06,.06,1,"#3b4656");
+      wallY(17.4,18.55,ym+.06,P.z+.55,P.z+1.05,"#fbfcfa");wallY(17.4,18.55,ym+.065,P.z+.62,P.z+.68,"#7a4a3a");
+      textY("南口",17.97,ym+.07,P.z+.86,6.5,"#1c2a3f")});
+    for(const [Y,on] of [[H_YA,L.yama],[H_KO,L.komichi]])if(on)q(21.5,Y,()=>{box(21.2,Y-.5,0,.3,1,.45,"#c33a31");box(21.25,Y-.45,.45,.2,.9,.08,"#e9e5d3")});
+  }
+  // zastávky autobusů
+  for(const b of HUB_BAYS.slice(0,L.busterm)){
+    const H=HUB_LINES[b.ln],x=b.x,y=33.35;
+    q(x,y,()=>{
+      for(const a of [x-1.2,x+1.1])box(a,y-.35,0,.07,.07,1.25,"#3b4656");
+      wallY(x-1.15,x+1.15,y-.3,.2,1.05,"rgba(190,215,225,.5)");
+      box(x-.8,y-.25,.24,1.5,.22,.05,"#a6784f");
+      box(x-1.35,y-.5,1.25,2.7,.65,.07,roofC(H.col));
+      box(x+1.45,y+.15,0,.05,.05,1.45,"#9aa3a8");
+      const X=px(x+1.47,y+.17),Y=py(x+1.47,y+.17,1.55);c.fillStyle="#fbfcfa";c.strokeStyle=H.col;c.lineWidth=1.4;c.beginPath();c.arc(X,Y,6.5,0,6.3);c.fill();c.stroke();
+      c.fillStyle=H.col;c.font='800 6px "Shippori Mincho",serif';c.textAlign="center";c.textBaseline="middle";c.fillText(H.kj,X,Y+.5);
+    });
+  }
+  // navazující jízdní řád: velké nádražní hodiny na sloupu
+  if(L.takt)q(28.9,27.3,()=>{
+    box(28.85,27.25,0,.1,.1,2.2,"#4a5666");
+    const X=px(28.9,27.3),Y=py(28.9,27.3,2.45);
+    c.fillStyle="#fbfcfa";c.strokeStyle="#1c2a3f";c.lineWidth=1.4;c.beginPath();c.arc(X,Y,7.5,0,6.3);c.fill();c.stroke();
+    const hh=(hour%12)/12*6.283,mm=(hour%1)*6.283;c.lineWidth=1.3;c.beginPath();c.moveTo(X,Y);c.lineTo(X+Math.sin(hh)*3.6,Y-Math.cos(hh)*3.6);c.moveTo(X,Y);c.lineTo(X+Math.sin(mm)*5.6,Y-Math.cos(mm)*5.6);c.stroke();
+    for(let i=0;i<L.takt;i++){c.fillStyle="#1f8a78";c.beginPath();c.arc(X-4+i*4,Y+11,1.6,0,6.3);c.fill()}
+  });
+  // informační tabule s odjezdy
+  if(L.info)q(24.4,27.4,()=>{
+    box(24.1,27.35,0,.08,.08,1.3,"#4a5666");box(25.2,27.35,0,.08,.08,1.3,"#4a5666");
+    box(23.95,27.3,1.3,1.45,.18,.85,"#22262e");
+    const rows=hubBoardRows();
+    rows.forEach((r,i)=>{const z=1.98-i*.21;wallY(24.05,24.3,27.49,z-.08,z+.08,r.col);
+      textY(r.txt,24.98,27.49,z,3.4,"#ffa94d","700 ")});
+    if(night>.2)addLight(24.7,27.6,1.7,.8,.5);
+  });
+  // krytá cesta
+  if(L.cover)q(26.6,29,()=>{
+    const rc=roofC("#5b8a7a");
+    for(let y=26;y<33;y+=1.75){box(25.95,y,0,.08,.08,1.85,"#8a939a");box(27.2,y,0,.08,.08,1.85,"#8a939a")}
+    box(25.8,24.9,1.85,1.65,8.1,.07,rc);
+    for(let x=22.2;x<26;x+=1.75)box(x,30.15,0,.08,.08,1.85,"#8a939a");
+    box(21.4,29.95,1.85,4.45,1.3,.07,rc);
+  },300);
+  // přestupní hala: prosklená střecha nad koncem terminálu a zastávkami
+  if(L.hall)Q.push({k:STRIP(33.4)*10000+26.6+33.4+900,fn:()=>{
+    for(const [x,y] of [[21.6,28.2],[31.6,28.2],[21.6,32.9],[31.6,32.9],[26.6,28.2],[26.6,32.9]])box(x-.07,y-.07,0,.14,.14,3.1,"#6d7782");
+    top(21.3,27.9,3.1,10.6,5.3,"rgba(200,222,232,.42)");
+    for(let x=21.3;x<31.95;x+=1.33)top(x,27.9,3.12,.05,5.3,"rgba(80,96,110,.55)");
+    wallY(21.3,31.9,33.2,2.95,3.12,"#6d7782");wallX(31.9,27.9,33.2,2.95,3.12,"#59636e");
+    if(night>.15)for(let x=23;x<31;x+=3.5)addLight(x,30.5,2.9,1.2,.5);
+  }});
+  if(L.yama||L.komichi)tunnelHill(L);
+  if(L.komichi)komichiScene(L,t);
+  if(L.konbini)konbiniScene(L,t);
+  // vozidla
+  for(const v of hubRail)drawHubRail(v);
+  // auto v bližším (jižním) pruhu se kreslí vždy až po autobusu ve vzdálenějším pruhu, jinak by ho při míjení autobus na chvíli překryl
+  for(const a of hubCars)if(a.phase!=="off"){const al=Math.max(0,Math.min(1,(a.x+1)/2.4,(MAPX+1-a.x)/2.4));if(al>0)q(a.x,a.lane,()=>{c.globalAlpha=al;LALPHA=al;drawStreetCar(a,t);c.globalAlpha=1;LALPHA=1},a.lane>H_LANE?3.5:2)}
+  for(const b of hubBuses)if(b.phase!=="off"){const al=Math.max(0,Math.min(1,(b.x+1.5)/3,(MAPX+1.5-b.x)/3));if(al>0)q(b.x,H_LANE,()=>{c.globalAlpha=al;LALPHA=al;drawHubBus({x:b.x,lane:H_LANE,col:HUB_LINES[b.ln].col,dest:HUB_LINES[b.ln].dest});c.globalAlpha=1;LALPHA=1},2)}
+}
+function hubBoardRows(){
+  const out=[];
+  for(const v of hubRail)if(G.L[v.key])out.push({ln:v.ln,here:v.phase==="dwell"});
+  for(const b of hubBuses)if(b.on)out.push({ln:b.ln,here:b.phase==="dwell"});
+  return out.slice(0,4).map(v=>{const H=HUB_LINES[v.ln];return {col:H.col,txt:H.kj+" "+H.name.toUpperCase()+(v.here?" ●":"")}});
+}
+/* ── vozidla uzlu ── */
+const hubRail=[
+  {ln:"YA",key:"yama",y:H_YA,liv:2,phase:"wait",t:0,wait:4,xe:-4},
+  {ln:"KO",key:"komichi",y:H_KO,liv:0,phase:"wait",t:0,wait:11,xe:-4},
+];
+const hubBuses=HUB_BAYS.map((b,i)=>({ln:b.ln,bay:b.x,i,phase:"off",idle:3+i*7,x:-6,v:0,t:0,on:false}));
+// běžná auta na jižní ulici: jen pár, aby se doprava nezahltila. Na západ jedou jižním pruhem, na východ sdílejí pruh s autobusy
+const H_LANE2=35.33;
+const hubCars=[{dir:-1,lane:H_LANE2,idle:4},{dir:-1,lane:H_LANE2,idle:19},{dir:1,lane:H_LANE,idle:12}].map(a=>Object.assign(a,{phase:"off",x:-9,v:0,go:false,req:false}));
+const carLen=a=>CAR_MODELS[a.m].L;
+let hubAcc=0,hubPaxAcc=0,hubCross=false;
+const railCars=v=>v.ln==="YA"?(G.L.yama>=2?2:1):2;
+function updateHub(dt){
+  syncMap();
+  const L=G.L,r=rates(L);
+  if(L.south){hubAcc+=r.hubPerMin/60*dt;hubPaxAcc+=r.xfer*dt}
+  // vlaky terminálu: přijedou ze západu, postojí a odjedou zpět
+  for(const v of hubRail){
+    if(!L[v.key]){v.phase="wait";v.t=0;continue}
+    v.t+=dt;const len=railCars(v)*HCL;
+    if(v.phase==="wait"){if(v.t>=v.wait){v.phase="in";v.t=0;
+      // s remízou vyjíždí každý druhý spoj Komichi historická tramvaj
+      if(v.ln==="KO"){v.run=(v.run||0)+1;v.liv=L.komichi>=2&&v.run%2===0?5:0}}}
+    else if(v.phase==="in"){const u=Math.min(1,v.t/6.5);v.xe=-1+(H_END+1)*ease(u);if(u>=1){v.phase="dwell";v.t=0;hubArrive(v.ln,(x)=>[x,v.y+(v.y<H_PL.y0?.75:-.75)],[H_PL.x1-len+.6,H_PL.x1-.4])}}
+    else if(v.phase==="dwell"){if(v.t>=12){v.phase="out";v.t=0;if(soundOn)note(587.33,0,.5,.035,"triangle")}}
+    else if(v.phase==="out"){const u=Math.min(1,v.t/7);v.xe=H_END-(H_END+len+2)*easeIn(u);if(u>=1){v.phase="wait";v.t=0;v.wait=(v.ln==="YA"?18:12)*(1-.08*L.takt)+Math.random()*6}}
+  }
+  // autobusy: ze západu na stání, pak přes křižovatku na východ
+  hubCross=false;
+  for(const b of hubBuses){
+    b.on=b.i<L.busterm;
+    if(b.phase==="off"){if(!b.on)continue;b.idle-=dt;if(b.idle<=0&&!hubBuses.some(o=>o!==b&&o.phase!=="off"&&o.x<2)&&!hubCars.some(o=>o.dir>0&&o.phase!=="off"&&o.x<3)){b.phase="come";b.x=-4;b.v=3}continue}
+    let target=3;
+    // jeden pruh: na autobus před sebou počká
+    let gap=1e9;for(const o of hubBuses)if(o!==b&&o.phase!=="off"&&o.x>b.x)gap=Math.min(gap,o.x-b.x-BUS_LEN-.7);
+    for(const o of hubCars)if(o.dir>0&&o.phase!=="off"&&o.x>b.x)gap=Math.min(gap,o.x-b.x-BUS_LEN/2-carLen(o)/2-.7);
+    if(b.phase==="come"){target=Math.min(3,(b.bay-b.x)*1.1+.25);if(b.x>=b.bay-.02){b.phase="dwell";b.t=0;b.x=b.bay;b.v=0;hubArrive(b.ln,(x)=>[x,33.55],[b.bay-1,b.bay+1])}}
+    else if(b.phase==="dwell"){b.t+=dt;target=0;if(b.t>6.5)b.phase="leave"}
+    else{
+      // u křižovatky si autobus řekne o přednost: auta zastaví před ní a autobus vjede, až je křižovatka prázdná
+      const front=b.x+BUS_LEN/2;
+      if(!b.go&&front>30.4){
+        target=Math.min(3,Math.max(0,(32.3-front)*2));
+        if(front>31.4)b.req=true;
+        if(b.req&&autos.every(a=>!(a.y>33.001&&a.y<36.799)))b.go=true;
+      }
+      if((b.req||b.go)&&b.x-BUS_LEN/2<35.9)hubCross=true;
+      if(b.x>MAPX+5){b.phase="off";b.go=false;b.req=false;b.idle=(14+Math.random()*10)*(1-.08*L.takt)}
+    }
+    target=Math.min(target,Math.max(0,gap*2));
+    b.v+=(target-b.v)*Math.min(1,dt*(target<b.v?5:1.3));
+    b.x+=Math.min(b.v*dt,Math.max(0,gap));
+    if(b.phase==="leave"&&!b.go)b.x=Math.min(b.x,32.3-BUS_LEN/2);
+    if(b.phase==="come")b.x=Math.min(b.x,b.bay);
+  }
+  updateHubCars(dt);
+}
+// auta na jižní ulici: u křižovatky si stejně jako autobusy řeknou o přednost
+const junctionFree=()=>autos.every(a=>!(a.y>33.001&&a.y<36.799));
+function updateHubCars(dt){
+  const L=G.L;
+  for(const a of hubCars){
+    if(!L.south){a.phase="off";a.go=a.req=false;continue}
+    if(a.phase==="off"){
+      a.idle-=dt;if(a.idle>0)continue;
+      const sx=a.dir>0?-4:MAPX+4;
+      // na vjezdu musí být volno
+      const busy=a.dir>0?hubBuses.some(o=>o.phase!=="off"&&o.x<3)||hubCars.some(o=>o!==a&&o.dir>0&&o.phase!=="off"&&o.x<3)
+                         :hubCars.some(o=>o!==a&&o.dir<0&&o.phase!=="off"&&o.x>MAPX-1);
+      if(busy){a.idle=1;continue}
+      pickCar(a);a.phase="drive";a.x=sx;a.v=2.6;a.go=a.req=false;continue;
+    }
+    const len=carLen(a);let target=2.7;
+    // odstup od vozidla před sebou ve stejném pruhu
+    let gap=1e9;
+    for(const o of hubCars)if(o!==a&&o.dir===a.dir&&o.phase!=="off"&&(o.x-a.x)*a.dir>0)gap=Math.min(gap,Math.abs(o.x-a.x)-len/2-carLen(o)/2-.6);
+    if(a.dir>0)for(const o of hubBuses)if(o.phase!=="off"&&o.x>a.x)gap=Math.min(gap,o.x-a.x-len/2-BUS_LEN/2-.6);
+    // křižovatka se silnicí k přejezdu (x 33–35, přechody okolo)
+    const front=a.x+a.dir*len/2,stop=a.dir>0?32.3:36.05,toStop=(stop-front)*a.dir;
+    if(!a.go&&toStop>-.05){
+      if(toStop<2.4){target=Math.min(target,Math.max(0,toStop*2));a.req=true}
+      if(a.req&&junctionFree())a.go=true;
+    }
+    const rear=a.x-a.dir*len/2;
+    if((a.req||a.go)&&(a.dir>0?rear<35.9:rear>32))hubCross=true;
+    target=Math.min(target,Math.max(0,gap*2));
+    a.v+=(target-a.v)*Math.min(1,dt*(target<a.v?5:1.4));
+    a.x+=a.dir*Math.min(a.v*dt,Math.max(0,gap));
+    if(!a.go)a.x=a.dir>0?Math.min(a.x,stop-len/2):Math.max(a.x,stop+len/2);
+    if(a.dir>0?a.x>MAPX+5:a.x<-5){a.phase="off";a.go=a.req=false;a.idle=a.dir>0?22+Math.random()*25:9+Math.random()*16}
+  }
+}
+// auto jedoucí po ose x: drawVehicle umí jen osu y, proto se kreslí se zaměněnými osami a zrcadlí (pohled je vůči záměně souměrný)
+function drawStreetCar(a,t){
+  const v={m:a.m,col:a.col,col2:a.col2,load:a.load,lane:a.lane,y:a.x,dir:a.dir};
+  c.save();c.scale(-1,1);SWAPXY=true;drawVehicle(v,t);SWAPXY=false;c.restore();
+}
+// příjezd spoje uzlu: výplata za přestupy, lidé vystoupí a čekající nastoupí
+function hubArrive(ln,doorAt,span){
+  const L=G.L,r=rates(L);
+  const gain=Math.round(hubAcc);hubAcc=0;
+  if(gain>0){G.money+=gain;G.total+=gain;G.pax+=Math.round(hubPaxAcc);hubPaxAcc=0;
+    const d=doorAt((span[0]+span[1])/2);floats.push({x:d[0],y:d[1],z:2.6,txt:"Přestupy +"+yen(gain),life:3,big:true})}
+  doorSound();
+  const plat=ln==="YA"||ln==="KO";
+  // odcházející k vlakům hlavní trati
+  const vis=Math.min(3+Math.floor(Math.random()*3)+Math.round(r.share*2),8,Math.max(0,MAXP-people.length));
+  const opts=["A"];if(r.tracks>=2)opts.push("I","I");if(r.tracks>=4)opts.push("C");
+  for(let i=0;i<vis;i++){
+    const x=span[0]+Math.random()*(span[1]-span[0]),d=doorAt(x),p=newPerson(d[0],d[1],plat?H_PL.z:0);
+    const mp=opts[Math.floor(Math.random()*opts.length)];
+    p.delay=.3+i*.25;p.plat=mp;p.tag="#1f8a78";p.state="walk";p.i=0;
+    p.path=[...hubWalk(plat?"T":"B",d[0],d[1]),{x:H_DOOR.x,y:H_DOOR.y,z:0,hide:2.5},...hubToPlat(mp)];
+    people.push(p);
+  }
+  // čekající na tento spoj nastoupí
+  people.filter(p=>p.plat==="H"+ln&&p.state==="wait").forEach((p,i)=>{
+    const x=span[0]+Math.random()*(span[1]-span[0]),d=doorAt(x);
+    p.state="walk";p.board=true;p.delay=1+i*.3;p.i=0;p.path=[{x:d[0],y:d[1],z:plat?H_PL.z:0}];
+  });
+}
+// cesta po náměstí mezi dveřmi jižního východu a terminálem (T) nebo zastávkami (B)
+function hubWalk(kind,x,y){
+  if(kind==="T")return [{x:x,y:30.8,z:H_PL.z},{x:H_PL.x1,y:30.8,z:H_PL.z},{x:22.3,y:30.6,z:0},{x:26.6,y:29.5,z:0},{x:26.6,y:25.6,z:0}];
+  return [{x:x,y:33.2,z:0},{x:26.6,y:32.6,z:0},{x:26.6,y:25.6,z:0}];
+}
+function hubToPlat(plat){
+  const by=plat==="A"?11.75:plat==="I"?16.25:20.75;
+  return [{x:10.95,y:by,z:.5},{x:waitX(plat),y:plat==="A"?11.3+Math.random()*.8:plat==="I"?15.85+Math.random()*.8:20.35+Math.random()*.8,z:.5}];
+}
+// lidé z vlaku hlavní trati, kteří přestupují na spoj uzlu
+function hubExitPath(plat){
+  const L=G.L,lines=[];
+  for(const b of HUB_BAYS.slice(0,L.busterm))lines.push(b.ln);
+  if(L.yama)lines.push("YA");if(L.komichi)lines.push("KO");
+  if(!lines.length)return null;
+  const ln=lines[Math.floor(Math.random()*lines.length)],by=plat==="A"?11.75:plat==="I"?16.25:20.75;
+  const pts=[{x:10.95,y:by,z:.5,hide:2.5},{x:H_DOOR.x,y:H_DOOR.y,z:0},{x:26.6,y:25.6,z:0}];
+  if(ln==="YA"||ln==="KO"){const x=H_PL.x1-1-Math.random()*6;pts.push({x:26.6,y:29.5,z:0},{x:22.3,y:30.6,z:0},{x:H_PL.x1,y:30.8,z:H_PL.z},{x,y:ln==="YA"?30.3:31.3,z:H_PL.z})}
+  else{const b=HUB_BAYS.find(b=>b.ln===ln);pts.push({x:26.6,y:32.4,z:0},{x:b.x-.9+Math.random()*1.8,y:32.95+Math.random()*.25,z:0})}
+  return {pts,plat:"H"+ln,tag:HUB_LINES[ln].col};
+}
+const TUN_X=3.2;
+// průmět kvádru (oblast vně tunelu kolem koleje) jako ořezový mnohoúhelník
+function tunnelClip(Y){
+  const P=[];for(const x of [TUN_X,TUN_X+60])for(const y of [Y-.75,Y+.75])for(const z of [0,1.98])P.push([px(x,y),py(x,y,z)]);
+  P.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lo=[],up=[];
+  for(const p of P){while(lo.length>1&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)}
+  for(const p of P.slice().reverse()){while(up.length>1&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}
+  const H=lo.slice(0,-1).concat(up.slice(0,-1));
+  c.beginPath();H.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.clip();
+}
+function drawHubRail(v){
+  if(!G.L[v.key]||v.phase==="wait")return;
+  const n=railCars(v),tr={liv:v.liv,clean:1},moving=v.phase!=="dwell";
+  for(let k=0;k<n;k++){
+    const b=v.xe-k*HCL,cx=b-CAR/2;
+    if(b<TUN_X+.02)continue; // celý vůz je ještě v tunelu
+    const inside=cx-CAR/2<TUN_X;
+    q(cx,v.y,()=>{if(inside){c.save();tunnelClip(v.y)}drawHubCar(cx,v.y,0,tr,k===0,k===0&&v.phase!=="out",moving);if(inside)c.restore()});
+  }
+}
+// kopec s tunelovými portály na západním okraji: vlaky přijíždějí z hor
+function tunnelHill(L){
+  Q.push({k:STRIP(28.2)*10000+9000,fn:()=>{
+    const X=TUN_X,y0=28.2,y1=33.35,zw=2.3,zt=2.95,grass=mix(pal.grass,"#ffffff",snow*.6),earth=mix("#8a7158","#c9c3ba",snow*.4),stone=mix("#a9a49a","#d7d9d8",snow*.4);
+    poly([0,y0,zt,X,y0,zw,X,y1,zw,0,y1,zt],grass);                    // travnatý vrch
+    poly([0,y1,0,X,y1,0,X,y1,zw,0,y1,zt],dark(earth,.08));             // jižní svah
+    poly([0,y1,zt-.25,X,y1,zw-.25,X,y1,zw,0,y1,zt],dark(grass,.1));
+    wallX(X,y0,y1,0,zw,stone);                                         // kamenná opěrná zeď
+    c.strokeStyle=dark(stone,.18);c.lineWidth=.6;c.beginPath();
+    for(let z=.38;z<zw;z+=.38){c.moveTo(px(X,y0),py(X,y0,z));c.lineTo(px(X,y1),py(X,y1,z))}c.stroke();
+    wallX(X+.01,y0,y1,zw-.12,zw,dark(stone,.25));
+    const arch=(Y,r,h,col)=>{const pts=[];pts.push(X+.02,Y+r,0);for(let i=0;i<=12;i++){const a=i/12*Math.PI;pts.push(X+.02,Y+Math.cos(a)*r,h+Math.sin(a)*r)}pts.push(X+.02,Y-r,0);poly(pts,col)};
+    for(const [Y,on,r,h] of [[H_YA,L.yama,.82,1.15],[H_KO,L.komichi,.74,1.0]]){
+      if(!on)continue;
+      arch(Y,r+.2,h,mix("#c9c3b6","#e8eaea",snow*.4));arch(Y,r,h,"#17141a");
+      // klenák nad portálem
+      poly([X+.03,Y-.12,h+r+.02,X+.03,Y+.12,h+r+.02,X+.03,Y+.08,h+r+.24,X+.03,Y-.08,h+r+.24],dark(stone,.2));
+    }
+    // keříky na kopci
+    const bush=snow>.6?"#e9eef0":pal.tree2;
+    for(const [x,y] of [[.8,29.2],[1.9,30.6],[.9,31.8],[2.3,32.9],[1.4,28.7]]){const z=zt-(zt-zw)*(x/X);const Xs=px(x,y),Ys=py(x,y,z);
+      c.fillStyle=dark(bush,.15);c.beginPath();c.ellipse(Xs,Ys-3,11,6.5,0,0,6.3);c.fill();c.fillStyle=bush;c.beginPath();c.ellipse(Xs-2,Ys-5,8,5,0,0,6.3);c.fill()}
+  }});
+}
+function resetHub(){
+  hubAcc=0;hubPaxAcc=0;hubCross=false;
+  hubRail.forEach((v,i)=>{v.phase="wait";v.t=0;v.wait=4+i*7;v.xe=-4});
+  hubBuses.forEach((b,i)=>{b.phase="off";b.idle=3+i*7;b.x=-6;b.v=0;b.go=false;b.req=false});
+  hubCars.forEach((a,i)=>{a.phase="off";a.idle=4+i*12;a.x=-9;a.v=0;a.go=a.req=false});
+}
+
+/* ── soukromá dráha Komichi: kiosek se suvenýry, lampy, hortenzie, remíza ── */
+function komichiScene(L,t){
+  const O="#d9792a",wood=mix("#a8754a","#c9b9a6",snow*.3),P=H_PL;
+  // dřevěný kiosek Komichi na západním konci nástupiště: jízdenky a suvenýry od jezera
+  q(10,30.8,()=>{
+    const x0=9.25,x1=10.95,y0=30.25,y1=31.4,z=P.z;
+    box(x0,y0,z,x1-x0,y1-y0,1.15,wood);
+    wallY(x0+.12,x1-.12,y1,z+.35,z+.85,mix("#f3e6c4","#ffe39a",night*.9));
+    for(let a=x0+.2;a<x1-.15;a+=.28)wallY(a,a+.16,y1+.01,z+.86,z+1.08,O); // látkový závěs noren
+    box(x0-.12,y0-.12,z+1.15,x1-x0+.24,y1-y0+.32,.08,roofC("#5a3a2a"));
+    wallY(x0+.1,x1-.1,y1+.2,z+1.24,z+1.5,"#fbfcfa");textY("小道電鉄",(x0+x1)/2,y1+.21,z+1.37,6,O);
+    box(x0+.15,y1+.05,z,.5,.25,.35,"#c9a26b");top(x0+.18,y1+.08,z+.351,.44,.19,"#e8778f"); // pult se suvenýry
+    if(night>.2)addLight((x0+x1)/2,y1,z+.6,.8,.7);
+  });
+  // retro lampy s oranžovým stínidlem podél koleje Komichi
+  for(const x of [12.4,16.2,20])q(x,31.45,()=>{
+    box(x-.04,31.41,P.z,.08,.08,1.35,"#3b2f28");
+    const X=px(x,31.45),Y=py(x,31.45,P.z+1.38);
+    c.fillStyle=O;c.beginPath();c.moveTo(X-4.5,Y+1.5);c.lineTo(X+4.5,Y+1.5);c.lineTo(X+2,Y-2.5);c.lineTo(X-2,Y-2.5);c.closePath();c.fill();
+    c.fillStyle=mix("#f3e6c4","#fff2b0",night);c.beginPath();c.arc(X,Y+2.6,1.6,0,6.3);c.fill();
+    if(night>.15)addLight(x,31.45,P.z+1.25,.9,.85);
+  });
+  // hortenzie podél koleje, jako u přímořských tramvají
+  const fl=snow>.6?["#e9eef1","#dfe5e8"]:season===0?["#7fa8d9","#b7a2dc"]:season===1?["#4f7fd0","#9a6cc8","#d77fb0"]:season===2?["#b5653a","#9b4f45"]:["#cfd6da","#bfc7cc"];
+  for(let x=3.9;x<21;x+=1.05){const k=Math.round(x*3);q(x,33.25,()=>{
+    const X=px(x,33.25),Y=py(x,33.25);
+    c.fillStyle=snow>.6?"#d9e0e3":"#4f7a4a";c.beginPath();c.ellipse(X,Y-3,7,4.5,0,0,6.3);c.fill();
+    for(let i=0;i<3;i++){c.fillStyle=fl[(k+i)%fl.length];c.beginPath();c.arc(X-4+i*4,Y-5-(i%2)*2,2.8,0,6.3);c.fill()}
+  },-1)}
+  if(L.komichi<2)return;
+  // dřevěná vítací brána nad kolejí Komichi s lucernami
+  const gx=7.4,ya=31.78,yb=33.02,red=mix("#b8402f","#d9c9c4",snow*.3);
+  // zadní sloup vždy za tramvají, přední sloup s trámem vždy před ní (jinak by při průjezdu problikávaly)
+  q(gx,ya,()=>box(gx-.08,ya-.08,0,.16,.16,2.15,red),-60);
+  q(gx,yb,()=>{
+    box(gx-.08,yb-.08,0,.16,.16,2.15,red);
+    box(gx-.12,ya-.3,2.1,.24,yb-ya+.6,.14,red);box(gx-.16,ya-.42,2.3,.32,yb-ya+.84,.1,"#3a2f2a");
+    wallX(gx+.13,(ya+yb)/2-.36,(ya+yb)/2+.36,1.72,2.06,"#fbfcfa");textX("小道",gx+.13,(ya+yb)/2,1.89,7,O);
+    for(const y of [ya+.28,yb-.28]){const X=px(gx,y),Y=py(gx,y,1.72);
+      c.strokeStyle="#3a2f2a";c.lineWidth=.8;c.beginPath();c.moveTo(X,Y-8);c.lineTo(X,Y-4);c.stroke();
+      c.fillStyle=mix("#d6432f","#ff9b5f",night);c.beginPath();c.ellipse(X,Y,3.2,4.2,0,0,6.3);c.fill();
+      c.fillStyle="#26201d";c.fillRect(X-2,Y-4.6,4,.9);c.fillRect(X-2,Y+3.7,4,.9);
+      if(night>.15)addLight(gx,y,1.72,.5,.9)}
+  },60);
+}
+
+/* ── konbini Komorebi Mart v pravém dolním rohu (vlastní značka: modrozelená a žlutá) ── */
+const KB_TEAL="#17806f",KB_YEL="#f2c94c";
+let konbiniCars=null;
+function konbiniScene(L,t){
+  const lv=L.konbini,x0=36.6,x1=39.75,y0=28.6,y1=31.0,H=1.3,w=mix("#f6f7f5","#ffffff",snow*.2),glass=mix("#cfe3ea","#fff6cc",night*.9);
+  q((x0+x1)/2,(y0+y1)/2,()=>{
+    box(x0,y0,0,x1-x0,y1-y0,H,w);
+    // prosklená výloha do ulice a dveře
+    wallY(x0+.15,x1-.15,y1,.06,.92,glass);
+    for(let a=x0+.15;a<=x1-.15+.01;a+=.62)wallY(a-.02,a+.02,y1+.002,.06,.92,"#9aa3a8");
+    wallY(x0+1.2,x0+1.85,y1+.004,.06,.88,mix("#9fc2cf","#fff0b0",night));
+    if(lv>=3){for(let a=x0+.25;a<x1-.4;a+=.75){wallY(a,a+.4,y1+.005,.3,.5,mix("#e8d9b5","#ffe39a",night))}} // jídelní pult u okna
+    winX(x1,y0+.4,y0+1.4,.4,.9);
+    // pruhy značky a nápis
+    wallY(x0,x1,y1+.006,.94,1.3,KB_TEAL);wallX(x1+.006,y0,y1,.94,1.3,KB_TEAL);
+    wallY(x0,x1,y1+.007,.97,1.0,KB_YEL);wallX(x1+.007,y0,y1,.97,1.0,KB_YEL);
+    wallY(x0+.35,x1-.35,y1+.008,1.04,1.27,mix("#f6f7f5","#fffef4",night));
+    textY("こもれびマート",(x0+x1)/2,y1+.009,1.155,6,KB_TEAL);
+    if(lv<3){box(x0-.03,y0-.03,H,x1-x0+.06,y1-y0+.06,.08,dark(w,.15));box(x0+.6,y0+.5,H+.08,.8,.6,.3,"#b9bfc4")}
+    else{
+      // patro s malými byty a balkony, na střeše svítící logo
+      const H2=2.55,w2=mix("#e9e3d6","#f4f2ec",snow*.2);
+      box(x0,y0,H,x1-x0,y1-y0,H2-H,w2);
+      for(let a=x0+.35;a<x1-.6;a+=1.05){winY(a,a+.55,y1,H+.35,H+.95);
+        top(a-.1,y1,H+.3,.75,.32,"#b9b4a7");wallY(a-.1,a+.65,y1+.32,H+.3,H+.6,"rgba(90,100,110,.35)")}
+      winX(x1,y0+.5,y0+1.3,H+.35,H+.95);
+      box(x0-.05,y0-.05,H2,x1-x0+.1,y1-y0+.1,.1,dark(w2,.18));
+      box(x0+1.1,y0+.9,H2+.1,.06,.06,.45,"#9aa3a8");box(x0+2.1,y0+.9,H2+.1,.06,.06,.45,"#9aa3a8");
+      wallY(x0+.9,x0+2.35,y0+.97,H2+.45,H2+.95,KB_TEAL);wallY(x0+.9,x0+2.35,y0+.975,H2+.62,H2+.68,KB_YEL);
+      textY("マート",x0+1.62,y0+.98,H2+.8,7,"#ffffff");
+      if(night>.15)addLight(x0+1.62,y0+1,H2+.7,1,.7);
+    }
+    if(night>.15){addLight((x0+x1)/2,y1+.2,.5,1.6,.75);addLight(x1+.2,(y0+y1)/2,.5,1,.5)}
+  });
+  if(lv>=2){
+    // před vchodem: popelnice na tříděný odpad, mraznička se zmrzlinou, stojan na kola
+    q(x0+.4,y1+.35,()=>{for(let k=0;k<3;k++)box(x0+.1+k*.26,y1+.1,0,.22,.22,.42,["#3d7fbf","#e9c63c","#5a9a5a"][k]);
+      box(x1-.85,y1+.1,0,.7,.32,.45,"#e9eef1");top(x1-.8,y1+.13,.451,.6,.26,mix("#9fd3e6","#dff4ff",night))},.3);
+    // vysoká cedule s logem u silnice
+    q(35.85,33.25,()=>{box(35.8,33.2,0,.1,.1,2.4,"#9aa3a8");box(35.62,33.13,2.4,.46,.24,.6,"#ffffff");
+      wallY(35.62,36.08,33.371,2.45,2.95,KB_TEAL);wallX(36.081,33.13,33.37,2.45,2.95,KB_TEAL);wallY(35.64,36.06,33.372,2.66,2.72,KB_YEL);
+      if(night>.15)addLight(35.85,33.3,2.7,.8,.8)},.5);
+    // zaparkovaná auta čelem k obchodu
+    if(!konbiniCars)konbiniCars=[36.75,37.95,39.15].map((x,i)=>pickCar({lane:x,y:32.55,dir:-1,v:0}));
+    konbiniCars.slice(0,lv>=3?3:2).forEach(a=>q(a.lane,a.y,()=>drawVehicle(a,t),.2));
+  }
+  if(lv>=3){
+    // zásobovací dodávka u boku obchodu
+    if(!konbiniCars.truck){konbiniCars.truck=pickCar({lane:36.05,y:29.8,dir:1,v:0},"van");konbiniCars.truck.col=KB_TEAL;konbiniCars.truck.col2="#ffffff"}
+    q(36.05,29.8,()=>drawVehicle(konbiniCars.truck,t),.2);
+  }
+}
+
+/* ── odemčení uzlu: město musí nejdřív vyrůst ── */
+const HUB_REQ=[
+  {t:"Druhá kolej s ostrovním nástupištěm",ok:L=>L.tracks>=1},
+  {t:"Elektrifikace trati",ok:L=>L.elec>=1},
+  {t:"Autobusová zastávka",ok:L=>L.bus>=1},
+  {t:"Vylepšení domů na 2. stupni",ok:L=>L.homes>=2},
+  {t:"Nákupní ulička",ok:L=>L.shops>=1},
+  {t:"Speciální stavba: chrám, kočičí kavárna nebo lázně",ok:L=>L.shrine>=1||L.cafe>=1||L.onsen>=1},
+];
+const hubOpen=()=>!!G.hubOpen||G.L.south>0;
+function checkHubUnlock(){
+  if(hubOpen()||!HUB_REQ.every(q=>q.ok(G.L))||!$("title").hidden)return;
+  G.hubOpen=true;saveCloud();
+  const n=$("hubNews");n.hidden=false;melody();
+  $("hubNewsGo").focus();
+  $("hubNewsGo").onclick=()=>{n.hidden=true;tab=3;if($("panel").classList.contains("closed"))$("openPanel").click();buildTabs();renderList()};
+}
+/* ── panel Uzel ── */
+function gainText(u){
+  const L={...G.L};const a=rates(L);L[u.id]++;const b=rates(L);
+  const d=b.perMin-a.perMin;
+  if(u.id==="south")return '<b class="gain">+'+yen(d)+' za minutu</b>';
+  if(d<1)return '<b class="gain">Zatím bez přínosu: nejdřív postav linku.</b>';
+  const extra=b.plyn>a.plyn?" · plynulost "+Math.round(a.plyn*100)+" → "+Math.round(b.plyn*100)+" %":"";
+  return '<b class="gain">+'+yen(d)+' za minutu'+extra+'</b>';
+}
+function hubHint(r){
+  if(!hubOpen())return "Přestupní uzel přijde, až stanice a městečko vyrostou. Splň všechny úkoly v seznamu.";
+  if(!G.L.south)return "Přestupní uzel začíná jižním východem. Pak přidávej linky, které přivezou přestupující, a vylepšení, díky kterým víc z nich stihne přípoj.";
+  if(r.share===0)return "Jižní náměstí je hotové. Postav autobusové nádraží nebo místní dráhu: přivezou lidi, kteří tu přestupují.";
+  if(r.plyn<.75)return "Přípoj teď stihne jen "+Math.round(r.plyn*100)+" % přestupujících. Vylepšení plynulosti zvednou výdělek ze všech linek najednou.";
+  return "U každé karty vidíš, kolik přidá za minutu. Nejvýhodnější je to, co přidá nejvíc za nejméně peněz.";
+}
+function updateHubStat(r){
+  const el=$("hubStat");if(!el)return;
+  if(!hubOpen()){
+    const html='<div><b>Uzel se odemkne, až z Komorebi vyroste rušné město</b></div><ul class="hubReq">'+
+      HUB_REQ.map(q=>'<li class="'+(q.ok(G.L)?"ok":"")+'">'+q.t+'</li>').join("")+'</ul>'+
+      '<div style="color:var(--ink-soft);margin-top:6px">Splněno '+HUB_REQ.filter(q=>q.ok(G.L)).length+' z '+HUB_REQ.length+'.</div>';
+    if(el.innerHTML!==html)el.innerHTML=html;return}
+  if(!G.L.south){el.innerHTML='<div><b>Přestupní uzel</b></div><div style="color:var(--ink-soft)">Zatím nepostaven. Lidé tu budou přestupovat mezi vlaky, autobusy a místními drahami.</div>';return}
+  const p=Math.round(r.plyn*100),inn=r.xferIn*60,ok=r.xfer*60;
+  const html='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b>Plynulost přestupů</b><span class="big">'+p+' %</span></div>'+
+    '<div class="meter"><i style="width:'+p+'%"></i></div>'+
+    '<dl><dt>Přijede k přestupu</dt><dd>'+nf.format(Math.round(inn))+' lidí/min</dd><dt>Stihne přípoj</dt><dd>'+nf.format(Math.round(ok))+' lidí/min</dd><dt>Výdělek z přestupů</dt><dd>'+yen(r.hubPerMin)+'/min</dd></dl>';
+  if(el.innerHTML!==html)el.innerHTML=html;
+}
 
 /* ─────────────── START ─────────────── */
 function start(data){
@@ -2381,6 +3460,7 @@ function start(data){
   }
   resize();updatePalette();uiReady=true;buildTabs();renderList();wireReset();
   new ResizeObserver(()=>resize()).observe(document.body);
+  titleInit(!!s);
   requestAnimationFrame(frame);
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{groundDirty=true});
 }
